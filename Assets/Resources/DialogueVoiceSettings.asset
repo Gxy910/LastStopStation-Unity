@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ece891cae76ea5f46b0961f66e7437b7, type: 3}
+  m_Name: DialogueVoiceSettings
+  m_EditorClassIdentifier: 
+  voices:
+  - speaker: "\u963F\u5C9A"
+    pitch: 185
+    secondsPerCharacter: 0.067
+    volume: 0.24
+    brightness: 0.4
+  - speaker: "\u5B59\u59E8"
+    pitch: 235
+    secondsPerCharacter: 0.075
+    volume: 0.22
+    brightness: 0.5
+  - speaker: "\u8DEF\u54E8\u7AD9\u957F"
+    pitch: 135
+    secondsPerCharacter: 0.075
+    volume: 0.22
+    brightness: 0.25
+  - speaker: "\u6696\u68DA\u9886\u73ED"
+    pitch: 205
+    secondsPerCharacter: 0.07
+    volume: 0.23
+    brightness: 0.45
+  - speaker: "\u6696\u68DA\u7269\u8D44\u5458"
+    pitch: 250
+    secondsPerCharacter: 0.06
+    volume: 0.2
+    brightness: 0.65
+  - speaker: "\u6696\u68DA\u4F11\u606F\u8005"
+    pitch: 165
+    secondsPerCharacter: 0.08
+    volume: 0.18
+    brightness: 0.3
+  - speaker: "\u8DEF\u54E8\u767B\u8BB0\u5458"
+    pitch: 210
+    secondsPerCharacter: 0.055
+    volume: 0.2
+    brightness: 0.45
+  - speaker: "\u8DEF\u54E8\u503C\u52E4\u5458"
+    pitch: 150
+    secondsPerCharacter: 0.072
+    volume: 0.2
+    brightness: 0.3
+  - speaker: "\u8DEF\u54E8\u63A5\u9001\u8005"
+    pitch: 170
+    secondsPerCharacter: 0.06
+    volume: 0.21
+    brightness: 0.5

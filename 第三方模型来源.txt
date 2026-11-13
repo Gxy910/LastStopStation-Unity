@@ -1,0 +1,9 @@
+本工程的以下第三方角色资源由 Quaternius 提供，采用 CC0：
+
+Zombie_Legacy.fbx、ZombieTexture.png：Animated Zombie Pack
+https://quaternius.com/packs/animatedzombie.html
+
+Characters_Matt.fbx、Characters_Shaun.fbx、Zombie_Atlas.png：Zombie Apocalypse Kit
+https://quaternius.com/packs/zombieapocalypsekit.html
+
+CC0 许可说明：https://creativecommons.org/publicdomain/zero/1.0/
