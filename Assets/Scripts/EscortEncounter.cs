@@ -14,6 +14,7 @@ namespace YuDian
         private Action<EscortEnding> onFinished;
         private Func<bool> onEnemyDefeated;
         private DialogueVoice dialogueVoice;
+        private GameAudio sounds;
         private NpcDialogueGaze escortGaze;
         private GameObject encounterRoot;
         private GameObject equipment;
@@ -93,6 +94,7 @@ namespace YuDian
             onFinished = callback;
             onEnemyDefeated = defeatCallback;
             dialogueVoice = voice;
+            sounds = GetComponent<GameAudio>();
             string[] names = { "会合牌", "接送牌底座", "接送会合点 · 标牌" };
             for (int i = 0; i < names.Length; i++)
             {
@@ -226,6 +228,7 @@ namespace YuDian
                 {
                     playerHealth = Mathf.Min(3, playerHealth + 2);
                     hasMedicine = false;
+                    if (sounds != null) sounds.Play(GameAudio.Cue.Interact);
                     ShowMessage("使用恢复补给。", 2f);
                 }
                 if (!cartPlaced && Near(cart.transform.position, 2.1f) && Input.GetKeyDown(KeyCode.E))
@@ -268,6 +271,7 @@ namespace YuDian
         private void TakeEquipment()
         {
             equipment.SetActive(false);
+            if (sounds != null) sounds.Play(GameAudio.Cue.Interact);
             EquipWeapon(false);
             phase = Phase.Fight;
             enemyAction = EnemyAction.Approach;
@@ -277,6 +281,7 @@ namespace YuDian
         private void PlaceCart()
         {
             cartPlaced = true;
+            if (sounds != null) sounds.Play(GameAudio.Cue.Door);
             cart.transform.localPosition = new Vector3(0, .32f, -.2f);
             ShowMessage("推车已就位。感染者撞上后会停顿更久。", 3f);
         }
@@ -364,6 +369,7 @@ namespace YuDian
                              !IsInProtectedRearArc(enemy.transform.forward, target - enemy.transform.position))
                     {
                         playerHealth--;
+                        if (sounds != null) sounds.Play(GameAudio.Cue.Hurt);
                         damageFlash = .8f;
                         damageCooldown = 1.2f;
                         Recover(1.45f);
@@ -443,6 +449,7 @@ namespace YuDian
         {
             attackCooldown = .55f;
             swingTimer = .25f;
+            if (sounds != null) sounds.Play(GameAudio.Cue.Swing);
             Vector3 toEnemy = enemy.transform.position + Vector3.up - walker.ViewCamera.transform.position;
             if (toEnemy.magnitude <= 2.3f && Vector3.Dot(walker.ViewCamera.transform.forward, toEnemy.normalized) > .45f)
             {
@@ -452,6 +459,7 @@ namespace YuDian
                     return;
                 }
                 enemyHealth--;
+                if (sounds != null) sounds.Play(GameAudio.Cue.Hit);
                 hitFeedback = .45f;
                 if (enemyHealth <= 0)
                 {
@@ -684,7 +692,7 @@ namespace YuDian
             return clip;
         }
 
-        private static Texture2D CreateDamageTexture()
+        internal static Texture2D CreateDamageTexture()
         {
             const int size = 128;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);

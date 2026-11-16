@@ -39,9 +39,12 @@ namespace YuDian
         private float captionEndsAt;
         private bool paused;
         private EscortEncounter escort;
+        private PatrolMission patrol;
+        private bool focusedPosting;
         private EpilogueStage epilogue;
         private PrototypeVisuals visuals;
         private DialogueVoice dialogueVoice;
+        private GameAudio gameAudio;
         private NpcDialogueGaze speakingGaze;
 
         private bool CaptionIsVisible => captionEndsAt > 0f;
@@ -80,8 +83,11 @@ namespace YuDian
             visuals = gameObject.AddComponent<PrototypeVisuals>();
             visuals.Initialize(station.transform);
             dialogueVoice = gameObject.AddComponent<DialogueVoice>();
+            gameAudio = gameObject.AddComponent<GameAudio>();
+            gameAudio.Configure(walker);
             escort = gameObject.AddComponent<EscortEncounter>();
             escort.Configure(walker, pickupYard.transform, chineseFont, visuals, OnEscortFinished, OnEnemyDefeated, dialogueVoice);
+            patrol = new PatrolMission(walker, station, chineseFont, signMaterial, visuals, gameAudio);
             epilogue = gameObject.AddComponent<EpilogueStage>();
             epilogue.Configure(station.transform, walker, chineseFont, visuals, signMaterial);
         }
@@ -108,6 +114,7 @@ namespace YuDian
         {
             StopDialoguePresentation();
             escort.ResetEncounter();
+            patrol.Reset();
             epilogue.ResetStage();
             story = new StationStory(startingCoins);
             paused = false;
@@ -123,6 +130,7 @@ namespace YuDian
             pickupYard.SetActive(atPickup);
 
             Transform spawn = atPickup ? pickupSpawn :
+                story.Chapter == 4 && epilogue.ReturnSpawn != null ? epilogue.ReturnSpawn :
                 story.Chapter == 2 || story.Chapter == 4 ? nextDaySpawn : stationSpawn;
             /*
             这个嵌套写法可以理解为
@@ -149,6 +157,7 @@ namespace YuDian
             focused = null;
             focusedDoor = null;
             focusedAmbientNpc = null;
+            focusedPosting = false;
             captionEndsAt = Time.unscaledTime + captionDuration;
             RefreshControls();
         }
@@ -217,6 +226,13 @@ namespace YuDian
                 return;
             }
 
+            if (patrol.IsRunning)
+            {
+                patrol.Tick(Time.deltaTime);
+                RefreshControls();
+                return;
+            }
+
             if (escort.IsRunning)
             {
                 focused = null;
@@ -229,7 +245,7 @@ namespace YuDian
 
             epilogue.Tick();
             UpdateFocus();
-            if ((focused != null || focusedDoor != null || focusedAmbientNpc != null) && Input.GetKeyDown(KeyCode.E))
+            if ((focusedPosting || focused != null || focusedDoor != null || focusedAmbientNpc != null) && Input.GetKeyDown(KeyCode.E))
                 InteractFocused();
             else if (Input.GetKeyDown(KeyCode.R))
                 ShowDialogue(story.CallDispatch());
@@ -237,19 +253,28 @@ namespace YuDian
 
         private void InteractFocused()
         {
+            if (focusedPosting)
+            {
+                if (!patrol.Begin(story)) { gameAudio.Play(GameAudio.Cue.Denied); ShowDialogue(new StationDialogue("清障值勤板", patrol.PostingLabel(story))); }
+                else { focusedPosting = false; focused = null; focusedDoor = null; focusedAmbientNpc = null; }
+                return;
+            }
             if (focusedAmbientNpc != null)
             {
+                gameAudio.Play(GameAudio.Cue.Interact);
                 ShowDialogue(focusedAmbientNpc.Talk());
                 return;
             }
             if (focusedDoor != null)
             {
                 if (!focusedDoor.TryToggle(walker))
-                    ShowDialogue(new StationDialogue("门", "门的转动范围里有人，请后退一点再开关。"));
+                { gameAudio.Play(GameAudio.Cue.Denied); ShowDialogue(new StationDialogue("门", "门的转动范围里有人，请后退一点再开关。")); }
+                else gameAudio.Play(GameAudio.Cue.Door);
                 return;
             }
             if (focused == null) return;
             int previousChapter = story.Chapter;
+            gameAudio.Play(GameAudio.Cue.Interact);
             StationDialogue reply = story.Interact(focused.Target);
             if (previousChapter != story.Chapter)
                 BeginChapter();
@@ -272,6 +297,7 @@ namespace YuDian
                 if (candidate.collider.transform.IsChildOf(walker.transform)) continue;
                 if (!hasHit || candidate.distance < hit.distance) { hit = candidate; hasHit = true; }
             }
+            focusedPosting = hasHit && patrol.IsPosting(hit.collider);
             focused = hasHit ? hit.collider.GetComponentInParent<StationInteractable>() : null;
             focusedDoor = hasHit ? hit.collider.GetComponentInParent<InteractiveDoor>() : null;
             focusedAmbientNpc = hasHit ? hit.collider.GetComponentInParent<AmbientNpc>() : null;
@@ -336,6 +362,7 @@ namespace YuDian
         }
 
         private void OnDisable() { StopDialoguePresentation(); if (escort != null) escort.SuspendSpeech(); }
+        private void OnDestroy() { if (patrol != null) patrol.Dispose(); }
 
         private void OnEscortFinished(EscortEnding ending)
         {
@@ -348,7 +375,7 @@ namespace YuDian
         private void RefreshControls()
         {
             walker.InputEnabled = !CaptionIsVisible && !paused && dialogue == null && !Complete &&
-                (!escort.IsRunning || !escort.LocksPlayer);
+                (!escort.IsRunning || !escort.LocksPlayer) && (patrol == null || !patrol.LocksPlayer);
             bool releaseCursor = paused || (Complete && dialogue == null);
             Cursor.lockState = releaseCursor ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = releaseCursor;
@@ -390,10 +417,15 @@ namespace YuDian
                 DrawEnding();
             else
             {
-                DrawHud();
-                DrawInteraction();
-                if (escort.IsRunning)
-                    escort.DrawOverlay(normal, small, centered, panelColor, textColor, accentColor);
+                if (patrol.IsRunning) patrol.Draw(normal, small, centered, panelColor, textColor, accentColor);
+                else
+                {
+                    DrawHud();
+                    DrawInteraction();
+                    patrol.Draw(normal, small, centered, panelColor, textColor, accentColor);
+                    if (escort.IsRunning)
+                        escort.DrawOverlay(normal, small, centered, panelColor, textColor, accentColor);
+                }
             }
 
             GUI.matrix = previous;
@@ -412,35 +444,31 @@ namespace YuDian
 
         private void DrawHud()
         {
-            Fill(new Rect(28, 25, 565, 103), panelColor);
-            Fill(new Rect(28, 25, 3, 103), accentColor);
-            Fill(new Rect(47, 62, 525, 1), new Color(.42f, .40f, .31f, .8f));
-            Label(new Rect(47, 37, 528, 24), story.ChapterName, small, accentColor);
-            Label(new Rect(47, 65, 528, 45), escort.IsRunning ? escort.Objective : story.Objective, normal, textColor);
+            YudianHud.Frame(new Rect(28, 25, 560, 106), accentColor);
+            Label(new Rect(47, 31, 500, 28), "余电  /  " + story.ChapterName, small, accentColor);
+            Fill(new Rect(47, 63, 510, 1), YudianHud.Line);
+            Label(new Rect(47, 70, 520, 44), escort.IsRunning ? escort.Objective : story.Objective, normal, textColor);
 
-            Fill(new Rect(985, 25, 267, 96), panelColor);
-            Fill(new Rect(985, 25, 267, 2), accentColor);
-            Label(new Rect(1004, 36, 227, 30), $"个人酒币  {story.PersonalCoins} 枚", normal, textColor);
+            YudianHud.Frame(new Rect(988, 25, 264, 95), accentColor);
+            Label(new Rect(1005, 32, 228, 29), $"随身酒币  ·  {story.PersonalCoins} 枚", normal, textColor);
             string status = story.CarriedItem;
-            if (string.IsNullOrEmpty(status))
-                status = story.DeviceRepaired ? "通讯装置 · 已修好" : "通讯装置 · 故障";
-            Label(new Rect(1004, 72, 227, 26), status, small, quietColor);
+            if (string.IsNullOrEmpty(status)) status = story.DeviceRepaired ? "通讯装置  /  已修好" : "通讯装置  /  故障";
+            Label(new Rect(1005, 69, 228, 26), status, small, quietColor);
         }
 
         private void DrawInteraction()
         {
             Fill(new Rect(637, 359, 6, 2), textColor);
             Fill(new Rect(639, 357, 2, 6), textColor);
-            if (focused != null || focusedDoor != null || focusedAmbientNpc != null)
+            if (focusedPosting || focused != null || focusedDoor != null || focusedAmbientNpc != null)
             {
-                Fill(new Rect(460, 393, 360, 46), panelColor);
-                string label = focusedAmbientNpc != null ? focusedAmbientNpc.DisplayName :
+                YudianHud.Frame(new Rect(385, 395, 510, 48), accentColor);
+                string label = focusedPosting ? patrol.PostingLabel(story) : focusedAmbientNpc != null ? focusedAmbientNpc.DisplayName :
                     focusedDoor != null ? focusedDoor.DisplayName : focused.DisplayName;
-                Label(new Rect(476, 396, 328, 40), $"E  ·  {label}", centered, textColor);
+                Label(new Rect(405, 399, 470, 40), $"E   /   {label}", normal, textColor);
             }
-
-            Fill(new Rect(28, 665, 595, 31), panelColor);
-            Label(new Rect(40, 665, 570, 31),
+            YudianHud.Frame(new Rect(28, 665, 640, 31), new Color(.48f, .57f, .48f));
+            Label(new Rect(40, 665, 618, 31),
                 story.HasKatana && story.Chapter == 4
                     ? "WASD 移动 · Shift 奔跑 · E 交互 · 1 收刀 · 左键挥刀"
                     : "WASD 移动 · Shift 奔跑 · 鼠标转向 · E 交互 · R 通讯 · Esc 暂停", small, quietColor);
@@ -448,13 +476,11 @@ namespace YuDian
 
         private void DrawDialogue()
         {
-            Fill(new Rect(136, 508, 1008, 164), panelColor);
-            Fill(new Rect(136, 508, 1008, 2), accentColor);
-            Fill(new Rect(136, 508, 4, 164), accentColor);
-            Label(new Rect(165, 521, 949, 37), dialogue.SpeakerAt(dialogueIndex), large, accentColor);
-            Label(new Rect(165, 563, 949, 50), dialogue.Lines[dialogueIndex], normal, textColor);
-            Label(new Rect(165, 624, 949, 28), $"E / Enter  继续    {dialogueIndex + 1}/{dialogue.Lines.Length}",
-                small, quietColor);
+            YudianHud.Frame(new Rect(136, 507, 1008, 165), accentColor);
+            Label(new Rect(163, 516, 905, 40), dialogue.SpeakerAt(dialogueIndex), large, accentColor);
+            Fill(new Rect(165, 561, 950, 1), YudianHud.Line);
+            Label(new Rect(165, 570, 949, 49), dialogue.Lines[dialogueIndex], normal, textColor);
+            Label(new Rect(165, 626, 949, 27), $"E / Enter  继续       {dialogueIndex + 1} / {dialogue.Lines.Length}", small, quietColor);
         }
 
         private void DrawMenu(string heading, string instructions)

@@ -1,0 +1,128 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace YuDian
+{
+    /// <summary>为车站原型提供轻量的环境声和即时反馈声，声音在启动时预生成。</summary>
+    public sealed class GameAudio : MonoBehaviour
+    {
+        public enum Cue { Interact, Door, Denied, Reload, ReloadComplete, Swing, Hit, Hurt, WaveStart, WaveClear, Evacuate }
+        private const int Rate = 24000;
+        private readonly Dictionary<Cue, AudioClip> clips = new Dictionary<Cue, AudioClip>();
+        private readonly AudioClip[] footsteps = new AudioClip[4];
+        private AudioSource effects, ambient;
+        private FirstPersonWalker walker;
+        private CharacterController body;
+        private AudioClip wind;
+        private float stepDistance = .8f;
+        private int footIndex;
+
+        public void Configure(FirstPersonWalker player)
+        {
+            walker = player; body = player.GetComponent<CharacterController>();
+            effects = gameObject.AddComponent<AudioSource>(); effects.playOnAwake = false;
+            effects.spatialBlend = 0; effects.volume = .65f; effects.priority = 90;
+            ambient = gameObject.AddComponent<AudioSource>(); ambient.playOnAwake = false;
+            ambient.spatialBlend = 0; ambient.loop = true; ambient.volume = .025f; ambient.priority = 180;
+            for (int i = 0; i < footsteps.Length; i++) footsteps[i] = MakeFootstep(i);
+            clips[Cue.Interact] = MakeTone("交互", .12f, 540, .35f, 11);
+            clips[Cue.Door] = MakeNoise("铁门", .34f, 95, .35f, 13);
+            clips[Cue.Denied] = MakeTone("受阻", .14f, 150, .28f, 14);
+            clips[Cue.Reload] = MakeNoise("换弹开始", .16f, 880, .30f, 15);
+            clips[Cue.ReloadComplete] = MakeNoise("换弹完成", .12f, 1120, .28f, 16);
+            clips[Cue.Swing] = MakeNoise("挥动", .13f, 380, .26f, 25);
+            clips[Cue.Hit] = MakeNoise("命中", .12f, 260, .34f, 17);
+            clips[Cue.Hurt] = MakeNoise("受伤", .25f, 76, .36f, 18);
+            clips[Cue.WaveStart] = MakeTone("来袭警示", .32f, 310, .22f, 19);
+            clips[Cue.WaveClear] = MakeTone("清场提示", .26f, 460, .22f, 20);
+            clips[Cue.Evacuate] = MakeTone("撤离提示", .24f, 370, .22f, 21);
+            wind = MakeWind(); ambient.clip = wind; ambient.Play();
+        }
+
+        public void Play(Cue cue)
+        {
+            if (effects != null && clips.TryGetValue(cue, out AudioClip clip)) effects.PlayOneShot(clip);
+        }
+
+        private void Update() { TickFootsteps(Time.deltaTime); }
+
+        internal void TickFootsteps(float dt)
+        {
+            if (walker == null || body == null || !walker.InputEnabled || !body.isGrounded || walker.HorizontalSpeed < .18f)
+            { stepDistance = Mathf.Min(stepDistance, .8f); return; }
+            float speed = walker.HorizontalSpeed;
+            stepDistance += speed * Mathf.Max(0, dt);
+            float stride = walker.IsSprinting ? 1.85f : 1.65f;
+            if (stepDistance < stride) return;
+            stepDistance -= stride;
+            effects.PlayOneShot(footsteps[footIndex++ % footsteps.Length], walker.IsSprinting ? .4f : .25f);
+        }
+
+        private static AudioClip MakeFootstep(int seed)
+        {
+            int n = Mathf.RoundToInt(Rate * .17f); var samples = new float[n]; var rng = new System.Random(302 + seed);
+            float filtered = 0;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)Rate; float noise = (float)rng.NextDouble() * 2 - 1;
+                filtered = Mathf.Lerp(filtered, noise, .20f);
+                float envelope = Mathf.Exp(-t * 23f) * Mathf.Min(1, t * 800f);
+                samples[i] = (filtered * .56f + Mathf.Sin(2 * Mathf.PI * (78 + seed * 5) * t) * .32f) * envelope * .55f;
+            }
+            return MakeClip("脚步" + seed, samples);
+        }
+
+        private static AudioClip MakeNoise(string name, float duration, float frequency, float amplitude, int seed)
+        {
+            int n = Mathf.RoundToInt(Rate * duration); var samples = new float[n]; var rng = new System.Random(seed); float filtered = 0;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)Rate, noise = (float)rng.NextDouble() * 2 - 1;
+                filtered = Mathf.Lerp(filtered, noise, frequency > 400 ? .65f : .16f);
+                float env = Mathf.Exp(-t * (name == "铁门" ? 9f : 22f)) * Mathf.Min(1, t * 900f);
+                samples[i] = (filtered * .7f + Mathf.Sin(2 * Mathf.PI * frequency * t) * .3f) * env * amplitude;
+            }
+            return MakeClip(name, samples);
+        }
+
+        private static AudioClip MakeTone(string name, float duration, float frequency, float amplitude, int seed)
+        {
+            int n = Mathf.RoundToInt(Rate * duration); var samples = new float[n];
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)Rate; float pulse = t < duration * .46f ? 1 : t > duration * .57f ? .8f : 0;
+                float envelope = Mathf.Min(1, t * 160) * Mathf.Min(1, (duration - t) * 60) * pulse;
+                samples[i] = Mathf.Sin(2 * Mathf.PI * frequency * (t + .06f * t * t)) * envelope * amplitude;
+            }
+            return MakeClip(name, samples);
+        }
+
+        private static AudioClip MakeWind()
+        {
+            const float seconds = 8f; int n = Mathf.RoundToInt(Rate * seconds);
+            var samples = new float[n]; var rng = new System.Random(88); float filtered = 0;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)Rate, noise = (float)rng.NextDouble() * 2 - 1;
+                filtered = Mathf.Lerp(filtered, noise, .012f);
+                float envelope = .42f + .16f * Mathf.Sin(2 * Mathf.PI * t / seconds) + .09f * Mathf.Sin(4 * Mathf.PI * t / seconds);
+                float edge = Mathf.Min(1f, Mathf.Min(t, seconds - t) * 3f);
+                samples[i] = (filtered * 1.3f + Mathf.Sin(2 * Mathf.PI * 48 * t) * .12f) * envelope * edge;
+            }
+            return MakeClip("站外风声", samples);
+        }
+
+        private static AudioClip MakeClip(string name, float[] samples)
+        {
+            var clip = AudioClip.Create(name, samples.Length, 1, Rate, false); clip.SetData(samples, 0); return clip;
+        }
+
+        private void OnDestroy()
+        {
+            foreach (AudioClip clip in clips.Values) if (clip != null) Destroy(clip);
+            foreach (AudioClip clip in footsteps) if (clip != null) Destroy(clip);
+            if (wind != null) Destroy(wind);
+        }
+    }
+}
