@@ -1,0 +1,7 @@
+《余电》货场武器音效来源（CC0 1.0）
+
+PatrolRifleReal.wav：裁剪并调整音量，来源 GunLib 的 sounds/ak47_shot.ogg；项目署名 AK47 Shot，LeMudCrab：https://freesound.org/people/LeMudCrab/sounds/163457/
+PatrolReloadMechanical.wav：调整音量，来源 GunLib 的 sounds/ak47_reload.ogg；GunLib 对来源列出 AK-47 Assault Rifle being unloaded and reloaded，serøutōnin--deprivəd：https://freesound.org/people/ser%C3%B8ut%C5%8Dnin--depriv%C9%99d/sounds/674742/
+以上素材的对应关系与许可记录：https://github.com/Deases/GunLib/blob/4725b0228d7c2b75502ece8456064528e4b62bed/README.%20MD
+PatrolBolt.wav：裁剪并调整音量，来源 https://github.com/StarKnightt/counter-strike-in-browser/blob/main/public/audio/awp_bolt_1.ogg；该项目来源说明列为 Mosin Nagant Bolt Action Cycle，Zott820：https://freesound.org/s/370345/；来源清单 https://github.com/StarKnightt/counter-strike-in-browser/blob/main/public/audio/CREDITS.txt
+枪机音为步枪拉栓录音，用作游戏音效，并非声称是 AK 原枪实录。

@@ -3,6 +3,7 @@ using UnityEngine;
 namespace YuDian
 {
     /// <summary>按战斗状态播放资源自带的骨骼动作，不负责移动角色。</summary>
+    [DefaultExecutionOrder(-100)]
     public sealed class AssetAnimationPlayer : MonoBehaviour
     {
         private GameObject model;
@@ -13,10 +14,16 @@ namespace YuDian
         private float lean;
         private Quaternion baseRotation;
         private bool looping;
+        public event System.Action PoseUpdated;
 
         public void Configure(GameObject animatedModel, string resourcePath)
         {
             model = animatedModel;
+            // 非 Legacy 动画在独立游戏里需要 Animator 才能采样；编辑器不一定暴露此问题。
+            Animator animator = model.GetComponent<Animator>();
+            if (animator == null) animator = model.AddComponent<Animator>();
+            animator.enabled = true;
+            animator.applyRootMotion = false;
             baseRotation = model.transform.localRotation;
             clips = Resources.LoadAll<AnimationClip>(resourcePath);
         }
@@ -33,6 +40,7 @@ namespace YuDian
                 looping = loop;
                 clock = 0;
                 current.SampleAnimation(model, 0);
+                PoseUpdated?.Invoke();
                 return;
             }
         }
@@ -47,6 +55,7 @@ namespace YuDian
                 ? clock % current.length : Mathf.Min(clock, current.length);
             current.SampleAnimation(model, time);
             model.transform.localRotation = Quaternion.Euler(lean, 0, 0) * baseRotation;
+            PoseUpdated?.Invoke();
         }
     }
 }

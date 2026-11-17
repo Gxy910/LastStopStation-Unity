@@ -13,6 +13,7 @@ namespace YuDian
 
         private CharacterController body;
         private float pitch;
+        private float recoilPitch;
         private float verticalSpeed;
         private float currentSpeed;
         private CameraBobbing cameraMotion;
@@ -21,6 +22,7 @@ namespace YuDian
         public bool InputEnabled { get; set; }
         public bool IsSprinting { get; private set; }
         public float HorizontalSpeed { get; private set; }
+        internal float WalkingSpeed => walkingSpeed;
 
         private void Awake()
         {
@@ -42,12 +44,18 @@ namespace YuDian
             transform.SetPositionAndRotation(destination.position, destination.rotation);
             body.enabled = true;
             verticalSpeed = 0f;
-            pitch = 0f;
+            pitch = 0f; recoilPitch = 0f;
             currentSpeed = 0f;
             HorizontalSpeed = 0f;
             IsSprinting = false;
             if (cameraMotion != null) cameraMotion.ResetMotion();
             viewCamera.transform.localRotation = Quaternion.identity;
+        }
+
+        public void AddRecoil(float amount)
+        {
+            recoilPitch = Mathf.Clamp(recoilPitch + amount, 0f, 3f);
+            viewCamera.transform.localRotation = Quaternion.Euler(Mathf.Clamp(pitch - recoilPitch, -82f, 82f), 0f, 0f);
         }
 
         private void Update()
@@ -63,7 +71,8 @@ namespace YuDian
 
             transform.Rotate(0f, Input.GetAxisRaw("Mouse X") * lookSensitivity, 0f);
             pitch = Mathf.Clamp(pitch - Input.GetAxisRaw("Mouse Y") * lookSensitivity, -82f, 82f);
-            viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+            recoilPitch = Mathf.MoveTowards(recoilPitch, 0f, 4f * Time.deltaTime);
+            viewCamera.transform.localRotation = Quaternion.Euler(Mathf.Clamp(pitch - recoilPitch, -82f, 82f), 0f, 0f);
 
             float horizontal = (Input.GetKey(KeyCode.D) ? 1f : 0f) -
                 (Input.GetKey(KeyCode.A) ? 1f : 0f);

@@ -7,6 +7,8 @@ namespace YuDian
         private Bounds obstacle;
         private readonly Vector3[] corners = new Vector3[4];
         private readonly PatrolYardLayout layout;
+        private readonly GameObject sideGate;
+        private readonly Light sideLamp;
 
         public GameObject Root { get; }
         public Transform Arrival { get; }
@@ -65,6 +67,14 @@ namespace YuDian
                 if (renderer != null) renderer.sharedMaterial = textMaterial != null ? textMaterial : font.material;
             }
             UpdateObstacle();
+            // 保持场景现有物件不变：侧门提示贴近东墙，远离南侧撤离门。
+            Transform side = Node(Root.transform, "后期侧门_运行时", new Vector3(9.77f, 0, 10.5f));
+            sideGate = side.gameObject;
+            Box(side, "侧门门板", new Vector3(0, 1.30f, 0), new Vector3(.07f, 2.6f, 2.35f), steel, false);
+            Box(side, "侧门警示灯", new Vector3(-.08f, 2.75f, 0), new Vector3(.12f, .13f, 2.2f), amber, false);
+            sideLamp = Node(side, "侧门预警照明", new Vector3(-.35f, 2.65f, 0)).gameObject.AddComponent<Light>();
+            sideLamp.type = LightType.Point; sideLamp.color = new Color(1f, .32f, .08f); sideLamp.range = 5f; sideLamp.intensity = 1.6f;
+            sideGate.SetActive(false);
             Root.SetActive(false);
         }
 
@@ -150,8 +160,15 @@ namespace YuDian
             corners[3] = new Vector3(min.x-cornerMargin,.65f,max.z+cornerMargin);
         }
 
+        public void SetSideGate(bool visible, bool warning)
+        {
+            sideGate.SetActive(visible);
+            sideLamp.enabled = warning;
+        }
+
         public Vector3 SpawnPosition(int lane, int index)
         {
+            if (lane == 2) return Root.transform.TransformPoint(new Vector3(8.8f, .06f, 10.5f + (index % 2) * .65f));
             Transform spawn = lane == 0 ? layout.leftSpawn : layout.rightSpawn;
             if (spawn == null) return Root.transform.TransformPoint(new Vector3(lane == 0 ? -6.5f : 6.5f, .06f, 16 + (index % 3 - 1) * .75f));
             return spawn.position + Root.transform.forward * ((index % 3 - 1) * .75f);

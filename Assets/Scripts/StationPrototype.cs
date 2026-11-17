@@ -38,6 +38,8 @@ namespace YuDian
         private GUIStyle title;
         private float captionEndsAt;
         private bool paused;
+        private bool openingIntro;
+        private float openingStarted;
         private EscortEncounter escort;
         private PatrolMission patrol;
         private bool focusedPosting;
@@ -119,6 +121,7 @@ namespace YuDian
             story = new StationStory(startingCoins);
             paused = false;
             dialogue = null;
+            openingIntro = true; openingStarted = Time.unscaledTime;
             BeginChapter();
         }
 
@@ -171,6 +174,12 @@ namespace YuDian
 
         private void Update()
         {
+            if (openingIntro)
+            {
+                if (Input.GetKeyDown(KeyCode.Space) || Time.unscaledTime - openingStarted >= 22f)
+                { openingIntro = false; captionEndsAt = Time.unscaledTime + captionDuration; RefreshControls(); }
+                return;
+            }
             if (CaptionIsVisible)
             {
                 if (Time.unscaledTime >= captionEndsAt || Input.GetKeyDown(KeyCode.Space))
@@ -256,7 +265,7 @@ namespace YuDian
             if (focusedPosting)
             {
                 if (!patrol.Begin(story)) { gameAudio.Play(GameAudio.Cue.Denied); ShowDialogue(new StationDialogue("清障值勤板", patrol.PostingLabel(story))); }
-                else { focusedPosting = false; focused = null; focusedDoor = null; focusedAmbientNpc = null; }
+                else { focusedPosting = false; focused = null; focusedDoor = null; focusedAmbientNpc = null; RefreshControls(); }
                 return;
             }
             if (focusedAmbientNpc != null)
@@ -374,7 +383,7 @@ namespace YuDian
 
         private void RefreshControls()
         {
-            walker.InputEnabled = !CaptionIsVisible && !paused && dialogue == null && !Complete &&
+            walker.InputEnabled = !openingIntro && !CaptionIsVisible && !paused && dialogue == null && !Complete &&
                 (!escort.IsRunning || !escort.LocksPlayer) && (patrol == null || !patrol.LocksPlayer);
             bool releaseCursor = paused || (Complete && dialogue == null);
             Cursor.lockState = releaseCursor ? CursorLockMode.None : CursorLockMode.Locked;
@@ -395,7 +404,7 @@ namespace YuDian
                 title = MakeStyle(38, TextAnchor.MiddleCenter, false);
             }
 
-            if (CaptionIsVisible || paused || (Complete && dialogue == null))
+            if (openingIntro || CaptionIsVisible || paused || (Complete && dialogue == null))
                 Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.025f, 0.039f, 0.046f));
 
             float scale = Mathf.Min(Screen.width / 1280f, Screen.height / 720f);
@@ -404,7 +413,15 @@ namespace YuDian
             Matrix4x4 previous = GUI.matrix;
             GUI.matrix = Matrix4x4.TRS(offset, Quaternion.identity, new Vector3(scale, scale, 1f));
 
-            if (CaptionIsVisible)
+            if (openingIntro)
+            {
+                Label(new Rect(100, 135, 1080, 72), "末日车站", title, accentColor);
+                Label(new Rect(180, 245, 920, 55), "灾后三年，旧客运站仍有人停留。", centered, textColor);
+                Label(new Rect(180, 310, 920, 55), "你的通讯装置坏了，要先找修理工阿岚帮忙。", centered, textColor);
+                Label(new Rect(180, 375, 920, 55), "路哨负责站外接送，也发布清障委托。", centered, textColor);
+                Label(new Rect(180, 500, 920, 42), "按 Space 跳过介绍", small, quietColor);
+            }
+            else if (CaptionIsVisible)
                 Label(new Rect(35, 312, 1210, 96), story.ChapterCaption, centered, textColor);
             else if (paused)
                 DrawMenu("暂停", "Enter / Esc 继续    Backspace 重玩    Q 退出");
@@ -445,7 +462,7 @@ namespace YuDian
         private void DrawHud()
         {
             YudianHud.Frame(new Rect(28, 25, 560, 106), accentColor);
-            Label(new Rect(47, 31, 500, 28), "余电  /  " + story.ChapterName, small, accentColor);
+            Label(new Rect(47, 31, 500, 28), "末日车站  /  " + story.ChapterName, small, accentColor);
             Fill(new Rect(47, 63, 510, 1), YudianHud.Line);
             Label(new Rect(47, 70, 520, 44), escort.IsRunning ? escort.Objective : story.Objective, normal, textColor);
 

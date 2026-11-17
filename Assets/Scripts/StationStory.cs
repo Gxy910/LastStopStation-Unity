@@ -275,7 +275,7 @@ namespace YuDian
             if (Chapter == 4)
             {
                 CurrentStep = Step.MilestoneComplete;
-                return new StationDialogue("余电", "这一段旅程结束了。");
+                return new StationDialogue("末日车站", "这一段旅程结束了。");
             }
             if (Chapter == 1)
             {
