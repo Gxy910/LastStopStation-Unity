@@ -8,24 +8,97 @@ namespace YuDian
     public sealed class GameAudio : MonoBehaviour
     {
         public enum Cue { Interact, Door, Denied, Reload, ReloadComplete, Swing, Hit, Hurt, WaveStart, WaveClear, Evacuate }
+        internal enum VolumeChannel { Master, Gunfire, Footsteps, Ambience, Dialogue, Effects }
+
         private const int Rate = 24000;
+        private const string VolumeKeyPrefix = "YuDian.AudioVolume.";
+        private static readonly VolumeChannel[] VolumeChannels = (VolumeChannel[])Enum.GetValues(typeof(VolumeChannel));
+        private readonly float[] volumeLevels = new float[VolumeChannels.Length];
+        private readonly List<(AudioSource Source, VolumeChannel Channel, float BaseVolume)> volumeRoutes =
+            new List<(AudioSource, VolumeChannel, float)>();
+        private float originalMasterVolume;
+        private bool volumesDirty;
         private readonly Dictionary<Cue, AudioClip> clips = new Dictionary<Cue, AudioClip>();
-        private readonly AudioClip[] footsteps = new AudioClip[4];
-        private AudioSource effects, ambient;
+        private AudioClip[] footsteps;
+        private bool usesGeneratedFootsteps;
+        private AudioSource effects, ambient, footstepSource, reloadEffects;
         private FirstPersonWalker walker;
         private CharacterController body;
         private AudioClip wind;
         private float stepDistance = .8f;
         private int footIndex;
 
+        private void Awake()
+        {
+            originalMasterVolume = AudioListener.volume;
+            foreach (VolumeChannel channel in VolumeChannels)
+                volumeLevels[(int)channel] = Mathf.Clamp01(PlayerPrefs.GetFloat(VolumeKeyPrefix + channel, 1f));
+            AudioListener.volume = originalMasterVolume * GetVolume(VolumeChannel.Master);
+        }
+
+        internal float GetVolume(VolumeChannel channel) => volumeLevels[(int)channel];
+
+        internal void SetVolume(VolumeChannel channel, float value)
+        {
+            value = Mathf.Clamp01(value);
+            if (Mathf.Approximately(value, GetVolume(channel))) return;
+            volumeLevels[(int)channel] = value;
+            volumesDirty = true;
+            if (channel == VolumeChannel.Master)
+                AudioListener.volume = originalMasterVolume * value;
+
+            for (int i = volumeRoutes.Count - 1; i >= 0; i--)
+            {
+                var route = volumeRoutes[i];
+                if (route.Source == null) volumeRoutes.RemoveAt(i);
+                else if (route.Channel == channel) route.Source.volume = route.BaseVolume * value;
+            }
+        }
+
+        internal void SaveVolumes()
+        {
+            if (!volumesDirty) return;
+            foreach (VolumeChannel channel in VolumeChannels)
+                PlayerPrefs.SetFloat(VolumeKeyPrefix + channel, GetVolume(channel));
+            PlayerPrefs.Save();
+            volumesDirty = false;
+        }
+
+        internal void RouteVolume(AudioSource source, VolumeChannel channel)
+        {
+            float baseVolume = source.volume;
+            volumeRoutes.RemoveAll(route => route.Source == null);
+            volumeRoutes.Add((source, channel, baseVolume));
+            source.volume = baseVolume * GetVolume(channel);
+        }
+
+        internal AudioSource CreateSource(GameObject owner, float volume, VolumeChannel? channel = null,
+            int priority = 128, float spatialBlend = 0f)
+        {
+            var source = owner.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = spatialBlend;
+            source.volume = volume;
+            source.priority = priority;
+            if (channel.HasValue) RouteVolume(source, channel.Value);
+            return source;
+        }
+
         public void Configure(FirstPersonWalker player)
         {
             walker = player; body = player.GetComponent<CharacterController>();
-            effects = gameObject.AddComponent<AudioSource>(); effects.playOnAwake = false;
-            effects.spatialBlend = 0; effects.volume = .65f; effects.priority = 90;
-            ambient = gameObject.AddComponent<AudioSource>(); ambient.playOnAwake = false;
-            ambient.spatialBlend = 0; ambient.loop = true; ambient.volume = .025f; ambient.priority = 180;
-            for (int i = 0; i < footsteps.Length; i++) footsteps[i] = MakeFootstep(i);
+            effects = CreateSource(gameObject, .65f, VolumeChannel.Effects, priority: 90);
+            footstepSource = CreateSource(gameObject, .65f, VolumeChannel.Footsteps, priority: 90);
+            reloadEffects = CreateSource(gameObject, .65f, priority: 90);
+            ambient = CreateSource(gameObject, .025f, VolumeChannel.Ambience, priority: 180);
+            ambient.loop = true;
+            footsteps = Resources.LoadAll<AudioClip>("YudianAudio/Footsteps");
+            usesGeneratedFootsteps = footsteps.Length == 0;
+            if (usesGeneratedFootsteps)
+            {
+                footsteps = new AudioClip[4];
+                for (int i = 0; i < footsteps.Length; i++) footsteps[i] = MakeFootstep(i);
+            }
             clips[Cue.Interact] = MakeTone("交互", .12f, 540, .35f, 11);
             clips[Cue.Door] = MakeNoise("铁门", .34f, 95, .35f, 13);
             clips[Cue.Denied] = MakeTone("受阻", .14f, 150, .28f, 14);
@@ -42,7 +115,8 @@ namespace YuDian
 
         public void Play(Cue cue)
         {
-            if (effects != null && clips.TryGetValue(cue, out AudioClip clip)) effects.PlayOneShot(clip);
+            AudioSource source = cue == Cue.Reload || cue == Cue.ReloadComplete ? reloadEffects : effects;
+            if (source != null && clips.TryGetValue(cue, out AudioClip clip)) source.PlayOneShot(clip);
         }
 
         private void Update() { TickFootsteps(Time.deltaTime); }
@@ -56,7 +130,7 @@ namespace YuDian
             float stride = walker.IsSprinting ? 1.85f : 1.65f;
             if (stepDistance < stride) return;
             stepDistance -= stride;
-            effects.PlayOneShot(footsteps[footIndex++ % footsteps.Length], walker.IsSprinting ? .4f : .25f);
+            footstepSource.PlayOneShot(footsteps[footIndex++ % footsteps.Length], walker.IsSprinting ? .4f : .25f);
         }
 
         private static AudioClip MakeFootstep(int seed)
@@ -120,8 +194,11 @@ namespace YuDian
 
         private void OnDestroy()
         {
+            SaveVolumes();
+            AudioListener.volume = originalMasterVolume;
             foreach (AudioClip clip in clips.Values) if (clip != null) Destroy(clip);
-            foreach (AudioClip clip in footsteps) if (clip != null) Destroy(clip);
+            if (usesGeneratedFootsteps)
+                foreach (AudioClip clip in footsteps) if (clip != null) Destroy(clip);
             if (wind != null) Destroy(wind);
         }
     }

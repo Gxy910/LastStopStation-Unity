@@ -5,3 +5,7 @@ PatrolReloadMechanical.wav：调整音量，来源 GunLib 的 sounds/ak47_reload
 以上素材的对应关系与许可记录：https://github.com/Deases/GunLib/blob/4725b0228d7c2b75502ece8456064528e4b62bed/README.%20MD
 PatrolBolt.wav：裁剪并调整音量，来源 https://github.com/StarKnightt/counter-strike-in-browser/blob/main/public/audio/awp_bolt_1.ogg；该项目来源说明列为 Mosin Nagant Bolt Action Cycle，Zott820：https://freesound.org/s/370345/；来源清单 https://github.com/StarKnightt/counter-strike-in-browser/blob/main/public/audio/CREDITS.txt
 枪机音为步枪拉栓录音，用作游戏音效，并非声称是 AK 原枪实录。
+
+《末日车站》脚步音效来源（CC0 1.0）
+Footsteps/DirtStep01.wav 至 DirtStep04.wav：从 Nox_Sound 的 Footsteps_Walk.wav 开头裁出前四声泥地脚步，统一应用同一增益并作短淡入淡出。
+来源：https://freesound.org/people/Nox_Sound/sounds/490951/

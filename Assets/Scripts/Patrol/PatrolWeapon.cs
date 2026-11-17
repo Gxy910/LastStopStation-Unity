@@ -16,7 +16,7 @@ namespace YuDian
         private readonly Transform player;
         private readonly FirstPersonWalker walker;
         private readonly GameAudio sounds;
-        private readonly AudioSource audio, feedbackAudio, reloadAudio;
+        private readonly AudioSource audio, handlingAudio, feedbackAudio, reloadAudio;
         private readonly AudioSource[] rifleVoices = new AudioSource[3];
         private int nextRifleVoice;
         private readonly AudioClip shotSound, rifleSound, drySound, swingSound, headshotKillSound, mechanicalReloadSound, boltSound;
@@ -118,14 +118,13 @@ namespace YuDian
                 blood[i].GetComponent<Renderer>().sharedMaterial = bloodMaterial;
                 blood[i].transform.localScale = Vector3.one * .065f; blood[i].SetActive(false);
             }
-            audio = gun.parent.gameObject.AddComponent<AudioSource>(); audio.playOnAwake = false; audio.spatialBlend = 0f; audio.volume = .7f;
-            feedbackAudio = gun.parent.gameObject.AddComponent<AudioSource>(); feedbackAudio.playOnAwake = false; feedbackAudio.spatialBlend = 0f; feedbackAudio.volume = .7f;
-            reloadAudio = gun.parent.gameObject.AddComponent<AudioSource>(); reloadAudio.playOnAwake = false; reloadAudio.spatialBlend = 0f; reloadAudio.volume = .7f;
+            GameObject audioOwner = gun.parent.gameObject;
+            audio = sounds.CreateSource(audioOwner, .7f, GameAudio.VolumeChannel.Gunfire);
+            handlingAudio = sounds.CreateSource(audioOwner, .7f, GameAudio.VolumeChannel.Effects);
+            feedbackAudio = sounds.CreateSource(audioOwner, .7f, GameAudio.VolumeChannel.Effects);
+            reloadAudio = sounds.CreateSource(audioOwner, .7f);
             for (int i = 0; i < rifleVoices.Length; i++)
-            {
-                rifleVoices[i] = gun.parent.gameObject.AddComponent<AudioSource>();
-                rifleVoices[i].playOnAwake = false; rifleVoices[i].spatialBlend = 0f; rifleVoices[i].volume = .7f;
-            }
+                rifleVoices[i] = sounds.CreateSource(audioOwner, .7f, GameAudio.VolumeChannel.Gunfire);
             shotSound = MakeSound("手枪", .18f, 115f, .78f);
             rifleSound = Resources.Load<AudioClip>("YudianAudio/PatrolRifleReal") ?? Resources.Load<AudioClip>("YudianAudio/PatrolRifleFire") ?? MakeSound("步枪", .13f, 150f, .72f);
             headshotKillSound = Resources.Load<AudioClip>("YudianAudio/PatrolHeadshotKill") ?? MakeSound("爆头击杀", .12f, 1250f, .25f);
@@ -146,7 +145,7 @@ namespace YuDian
             DamageLimit = 12; StabilityUpgrades = FireRateUpgrades = 0;
             cooldown = reload = motion = gaitPhase = gaitWeight = equipMotion = 0; Equip(false);
         }
-        public void Hide() { weaponLight.enabled = false; gun.gameObject.SetActive(false); stick.gameObject.SetActive(false); muzzleFlash.SetActive(false); audio.Stop(); reloadAudio.Stop(); for (int i = 0; i < blood.Length; i++) { bloodLife[i] = 0; if (blood[i] != null) blood[i].SetActive(false); } reload = motion = 0; }
+        public void Hide() { weaponLight.enabled = false; gun.gameObject.SetActive(false); stick.gameObject.SetActive(false); muzzleFlash.SetActive(false); audio.Stop(); handlingAudio.Stop(); reloadAudio.Stop(); for (int i = 0; i < blood.Length; i++) { bloodLife[i] = 0; if (blood[i] != null) blood[i].SetActive(false); } reload = motion = 0; }
         public void Dispose() { foreach (var drop in blood) if (drop != null) Object.Destroy(drop); if (bloodMaterial != null) Object.Destroy(bloodMaterial); }
         public void Equip(bool melee)
         {
@@ -254,7 +253,7 @@ namespace YuDian
             if (Reloading) return Shot.Reloading;
             if (equipMotion > 0f) return Shot.Cooling;
             if (cooldown > 0) return Shot.Cooling;
-            if (!usingStick && Loaded <= 0) { cooldown = .2f; audio.PlayOneShot(drySound); return Shot.Dry; }
+            if (!usingStick && Loaded <= 0) { cooldown = .2f; handlingAudio.PlayOneShot(drySound); return Shot.Dry; }
             if (!usingStick) Loaded--;
             motion = usingStick ? .26f : .18f; cooldown = usingStick ? .76f : IsRifle ? .12f - .01f * FireRateUpgrades : .29f;
             if (!usingStick && IsRifle)
@@ -264,7 +263,8 @@ namespace YuDian
                 voice.pitch = RifleShotPitch(Loaded + 1);
                 voice.PlayOneShot(rifleSound);
             }
-            else audio.PlayOneShot(usingStick ? swingSound : shotSound);
+            else if (usingStick) handlingAudio.PlayOneShot(swingSound);
+            else audio.PlayOneShot(shotSound);
             if (!usingStick) muzzleFlash.SetActive(true);
             // HUD 准星位于屏幕正中，始终从相机中心发射；枪的模型位置不参与命中判断。
             Ray aim = view.ViewportPointToRay(new Vector3(.5f, .5f, 0));

@@ -38,6 +38,11 @@ namespace YuDian
         private GUIStyle title;
         private float captionEndsAt;
         private bool paused;
+        private float timeScaleBeforePause;
+        private bool audioPausedBeforePause;
+        private enum PausePrompt { None, Restart, Quit }
+        private PausePrompt pausePrompt;
+        private GUIStyle settingsButton;
         private bool openingIntro;
         private float openingStarted;
         private EscortEncounter escort;
@@ -87,6 +92,7 @@ namespace YuDian
             dialogueVoice = gameObject.AddComponent<DialogueVoice>();
             gameAudio = gameObject.AddComponent<GameAudio>();
             gameAudio.Configure(walker);
+            gameAudio.RouteVolume(dialogueVoice.GetComponent<AudioSource>(), GameAudio.VolumeChannel.Dialogue);
             escort = gameObject.AddComponent<EscortEncounter>();
             escort.Configure(walker, pickupYard.transform, chineseFont, visuals, OnEscortFinished, OnEnemyDefeated, dialogueVoice);
             patrol = new PatrolMission(walker, station, chineseFont, signMaterial, visuals, gameAudio);
@@ -119,9 +125,8 @@ namespace YuDian
             patrol.Reset();
             epilogue.ResetStage();
             story = new StationStory(startingCoins);
-            paused = false;
             dialogue = null;
-            openingIntro = true; openingStarted = Time.unscaledTime;
+            openingIntro = true; openingStarted = Time.time;
             BeginChapter();
         }
 
@@ -161,7 +166,7 @@ namespace YuDian
             focusedDoor = null;
             focusedAmbientNpc = null;
             focusedPosting = false;
-            captionEndsAt = Time.unscaledTime + captionDuration;
+            captionEndsAt = Time.time + captionDuration;
             RefreshControls();
         }
 
@@ -174,15 +179,30 @@ namespace YuDian
 
         private void Update()
         {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (pausePrompt != PausePrompt.None) pausePrompt = PausePrompt.None;
+                else SetPaused(!paused);
+                return;
+            }
+
+            if (paused)
+            {
+                if (Input.GetKeyDown(KeyCode.Backspace)) pausePrompt = PausePrompt.Restart;
+                else if (Input.GetKeyDown(KeyCode.Q)) pausePrompt = PausePrompt.Quit;
+                else if (pausePrompt == PausePrompt.None && Input.GetKeyDown(KeyCode.Return)) SetPaused(false);
+                return;
+            }
+
             if (openingIntro)
             {
-                if (Input.GetKeyDown(KeyCode.Space) || Time.unscaledTime - openingStarted >= 22f)
-                { openingIntro = false; captionEndsAt = Time.unscaledTime + captionDuration; RefreshControls(); }
+                if (Input.GetKeyDown(KeyCode.Space) || Time.time - openingStarted >= 22f)
+                { openingIntro = false; captionEndsAt = Time.time + captionDuration; RefreshControls(); }
                 return;
             }
             if (CaptionIsVisible)
             {
-                if (Time.unscaledTime >= captionEndsAt || Input.GetKeyDown(KeyCode.Space))
+                if (Time.time >= captionEndsAt || Input.GetKeyDown(KeyCode.Space))
                 {
                     captionEndsAt = 0f;
                     RefreshControls();
@@ -190,48 +210,16 @@ namespace YuDian
                 return;
             }
 
-            if (paused)
-            {
-                if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Return))
-                {
-                    paused = false;
-                    if (dialogue != null) PresentDialogueLine();
-                    RefreshControls();
-                }
-                else if (Input.GetKeyDown(KeyCode.Backspace))
-                    Restart();
-                else if (Input.GetKeyDown(KeyCode.Q))
-                    Application.Quit();
-                return;
-            }
-
             if (dialogue != null)
             {
                 if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Return))
                     NextDialogueLine();
-                else if (Input.GetKeyDown(KeyCode.Escape))
-                {
-                    paused = true;
-                    StopDialoguePresentation();
-                    RefreshControls();
-                }
                 return;
             }
 
             if (Complete)
             {
-                if (Input.GetKeyDown(KeyCode.Backspace))
-                    Restart();
-                else if (Input.GetKeyDown(KeyCode.Escape))
-                    Application.Quit();
-                return;
-            }
-
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                paused = true;
-                if (escort != null) escort.SuspendSpeech();
-                RefreshControls();
+                if (Input.GetKeyDown(KeyCode.Backspace)) Restart();
                 return;
             }
 
@@ -370,7 +358,57 @@ namespace YuDian
             if (dialogueVoice != null) dialogueVoice.StopVoice();
         }
 
-        private void OnDisable() { StopDialoguePresentation(); if (escort != null) escort.SuspendSpeech(); }
+        private void OnDisable()
+        {
+            if (paused)
+            {
+                paused = false;
+                RestorePausedWorld();
+            }
+            StopDialoguePresentation();
+            if (escort != null) escort.SuspendSpeech();
+        }
+
+        private void SetPaused(bool value)
+        {
+            if (paused == value) return;
+            paused = value;
+            pausePrompt = PausePrompt.None;
+            if (paused)
+            {
+                timeScaleBeforePause = Time.timeScale;
+                audioPausedBeforePause = AudioListener.pause;
+                Time.timeScale = 0f;
+                AudioListener.pause = true;
+            }
+            else RestorePausedWorld();
+            RefreshControls();
+        }
+
+        private void RestorePausedWorld()
+        {
+            Time.timeScale = timeScaleBeforePause;
+            AudioListener.pause = audioPausedBeforePause;
+            if (gameAudio != null) gameAudio.SaveVolumes();
+        }
+
+        private void ConfirmPauseAction()
+        {
+            if (pausePrompt == PausePrompt.Restart)
+            {
+                SetPaused(false);
+                Restart();
+            }
+            else if (pausePrompt == PausePrompt.Quit)
+            {
+                gameAudio.SaveVolumes();
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+#else
+                Application.Quit();
+#endif
+            }
+        }
         private void OnDestroy() { if (patrol != null) patrol.Dispose(); }
 
         private void OnEscortFinished(EscortEnding ending)
@@ -392,7 +430,7 @@ namespace YuDian
 
         private void OnGUI()
         {
-            if (Event.current.type != EventType.Repaint || story == null)
+            if (story == null || (!paused && Event.current.type != EventType.Repaint))
                 return;
 
             if (normal == null)
@@ -404,8 +442,10 @@ namespace YuDian
                 title = MakeStyle(38, TextAnchor.MiddleCenter, false);
             }
 
-            if (openingIntro || CaptionIsVisible || paused || (Complete && dialogue == null))
-                Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.025f, 0.039f, 0.046f));
+            if (paused)
+                Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(.015f, .025f, .031f, .76f));
+            else if (openingIntro || CaptionIsVisible || (Complete && dialogue == null))
+                Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(.025f, .039f, .046f));
 
             float scale = Mathf.Min(Screen.width / 1280f, Screen.height / 720f);
             Vector3 offset = new Vector3((Screen.width - 1280f * scale) * 0.5f,
@@ -413,7 +453,9 @@ namespace YuDian
             Matrix4x4 previous = GUI.matrix;
             GUI.matrix = Matrix4x4.TRS(offset, Quaternion.identity, new Vector3(scale, scale, 1f));
 
-            if (openingIntro)
+            if (paused)
+                DrawPauseSettings();
+            else if (openingIntro)
             {
                 Label(new Rect(100, 135, 1080, 72), "末日车站", title, accentColor);
                 Label(new Rect(180, 245, 920, 55), "灾后三年，旧客运站仍有人停留。", centered, textColor);
@@ -423,8 +465,6 @@ namespace YuDian
             }
             else if (CaptionIsVisible)
                 Label(new Rect(35, 312, 1210, 96), story.ChapterCaption, centered, textColor);
-            else if (paused)
-                DrawMenu("暂停", "Enter / Esc 继续    Backspace 重玩    Q 退出");
             else if (dialogue != null)
             {
                 DrawHud();
@@ -488,7 +528,7 @@ namespace YuDian
             Label(new Rect(40, 665, 618, 31),
                 story.HasKatana && story.Chapter == 4
                     ? "WASD 移动 · Shift 奔跑 · E 交互 · 1 收刀 · 左键挥刀"
-                    : "WASD 移动 · Shift 奔跑 · 鼠标转向 · E 交互 · R 通讯 · Esc 暂停", small, quietColor);
+                    : "WASD 移动 · Shift 奔跑 · 鼠标转向 · E 交互 · R 通讯 · Esc 设置", small, quietColor);
         }
 
         private void DrawDialogue()
@@ -500,10 +540,56 @@ namespace YuDian
             Label(new Rect(165, 626, 949, 27), $"E / Enter  继续       {dialogueIndex + 1} / {dialogue.Lines.Length}", small, quietColor);
         }
 
-        private void DrawMenu(string heading, string instructions)
+        private void DrawPauseSettings()
         {
-            Label(new Rect(100, 271, 1080, 65), heading, title, accentColor);
-            Label(new Rect(60, 349, 1160, 61), instructions, centered, textColor);
+            if (settingsButton == null)
+            {
+                settingsButton = new GUIStyle(GUI.skin.button) { font = chineseFont, fontSize = 20, fixedHeight = 0 };
+            }
+
+            if (pausePrompt != PausePrompt.None)
+            {
+                DrawPauseConfirmation();
+                return;
+            }
+
+            YudianHud.Frame(new Rect(284, 94, 712, 532), YudianHud.Brass);
+            Label(new Rect(327, 115, 615, 48), "暂停设置", large, accentColor);
+            Label(new Rect(327, 168, 615, 32), "音量", normal, textColor);
+            Fill(new Rect(328, 207, 624, 1), YudianHud.Line);
+
+            DrawVolumeRow(224, "总音量", GameAudio.VolumeChannel.Master);
+            DrawVolumeRow(269, "开枪", GameAudio.VolumeChannel.Gunfire);
+            DrawVolumeRow(314, "脚步", GameAudio.VolumeChannel.Footsteps);
+            DrawVolumeRow(359, "环境", GameAudio.VolumeChannel.Ambience);
+            DrawVolumeRow(404, "对话", GameAudio.VolumeChannel.Dialogue);
+            DrawVolumeRow(449, "交互和提示", GameAudio.VolumeChannel.Effects);
+            Fill(new Rect(328, 504, 624, 1), YudianHud.Line);
+
+            if (GUI.Button(new Rect(328, 526, 200, 43), "继续游戏", settingsButton)) SetPaused(false);
+            if (GUI.Button(new Rect(540, 526, 200, 43), "重新开始", settingsButton)) pausePrompt = PausePrompt.Restart;
+            if (GUI.Button(new Rect(752, 526, 200, 43), "退出游戏", settingsButton)) pausePrompt = PausePrompt.Quit;
+            Label(new Rect(328, 584, 624, 22), "Esc 继续  ·  音量设置自动保存", small, quietColor);
+        }
+
+        private void DrawVolumeRow(float y, string label, GameAudio.VolumeChannel channel)
+        {
+            float value = gameAudio.GetVolume(channel);
+            Label(new Rect(328, y, 175, 37), label, normal, textColor);
+            float next = GUI.HorizontalSlider(new Rect(510, y + 13, 360, 20), value, 0f, 1f);
+            if (!Mathf.Approximately(next, value))
+                gameAudio.SetVolume(channel, Mathf.Round(next * 100f) / 100f);
+            Label(new Rect(899, y, 60, 37), Mathf.RoundToInt(gameAudio.GetVolume(channel) * 100f) + "%", small, quietColor);
+        }
+
+        private void DrawPauseConfirmation()
+        {
+            bool quit = pausePrompt == PausePrompt.Quit;
+            YudianHud.Frame(new Rect(356, 237, 568, 251), YudianHud.Brass);
+            Label(new Rect(389, 260, 490, 45), quit ? "退出游戏？" : "重新开始？", large, accentColor);
+            Label(new Rect(389, 321, 494, 34), "本次游玩进度将丢失。", normal, textColor);
+            if (GUI.Button(new Rect(389, 393, 233, 45), "返回设置", settingsButton)) pausePrompt = PausePrompt.None;
+            if (GUI.Button(new Rect(645, 393, 245, 45), quit ? "确认退出" : "确认重玩", settingsButton)) ConfirmPauseAction();
         }
 
         private void DrawEnding()
@@ -512,7 +598,7 @@ namespace YuDian
             string[] lines = story.EndingLines();
             for (int i = 0; i < lines.Length; i++)
                 Label(new Rect(170, 165 + i * 65, 940, 58), lines[i], normal, textColor);
-            Label(new Rect(60, 625, 1160, 50), "Backspace 重玩    ·    Esc 退出", centered, quietColor);
+            Label(new Rect(60, 625, 1160, 50), "Backspace 重玩    ·    Esc 设置", centered, quietColor);
         }
 
         private static void Fill(Rect rect, Color color)

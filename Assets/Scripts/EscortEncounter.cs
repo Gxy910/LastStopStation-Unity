@@ -32,6 +32,7 @@ namespace YuDian
         private Material highlight;
         private Material danger;
         private AudioClip growl;
+        private AudioSource growlSource;
         private Font signFont;
         private PrototypeVisuals visuals;
         private PrototypeVisuals.EliteRig rig;
@@ -137,6 +138,7 @@ namespace YuDian
             encounterRoot = null;
             cart = null;
             enemy = null;
+            growlSource = null;
             alan = null;
             escorts = null;
             overturnedCart = null;
@@ -160,7 +162,7 @@ namespace YuDian
         {
             if (!IsRunning) return;
             coins = story.PersonalCoins;
-            if (messageUntil < Time.unscaledTime) message = null;
+            if (messageUntil < Time.time) message = null;
             attackCooldown = Mathf.Max(0, attackCooldown - deltaTime);
             damageCooldown = Mathf.Max(0, damageCooldown - deltaTime);
             damageFlash = Mathf.Max(0, damageFlash - deltaTime);
@@ -337,7 +339,7 @@ namespace YuDian
                         chargeDirection = direction.sqrMagnitude > .01f ? direction.normalized : -yard.forward;
                         if (chargeDirection.sqrMagnitude > .01f) enemy.transform.rotation = Quaternion.LookRotation(chargeDirection);
                         chargeMarker.SetActive(true);
-                        AudioSource.PlayClipAtPoint(growl, enemy.transform.position, .8f);
+                        if (growlSource != null) growlSource.PlayOneShot(growl);
                     }
                     if (direction.sqrMagnitude > .01f)
                         enemy.transform.rotation = Quaternion.LookRotation(direction);
@@ -586,6 +588,8 @@ namespace YuDian
             enemy = new GameObject("精英感染者");
             enemy.transform.SetParent(encounterRoot.transform, false);
             enemy.transform.localPosition = new Vector3(0, .03f, 3f);
+            if (sounds != null)
+                growlSource = sounds.CreateSource(enemy, .8f, GameAudio.VolumeChannel.Effects, spatialBlend: 1f);
             enemyBody = enemy.AddComponent<CharacterController>();
             enemyBody.center = new Vector3(0, 1, 0);
             enemyBody.height = 2f;
@@ -736,7 +740,7 @@ namespace YuDian
         private void ShowMessage(string value, float seconds)
         {
             message = value;
-            messageUntil = Time.unscaledTime + seconds;
+            messageUntil = Time.time + seconds;
         }
 
         public void DrawOverlay(GUIStyle normal, GUIStyle small, GUIStyle centered, Color panel, Color text, Color accent)

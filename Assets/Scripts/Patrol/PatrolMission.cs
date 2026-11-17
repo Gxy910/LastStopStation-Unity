@@ -338,9 +338,9 @@ namespace YuDian
 
         private void NoticeSpawnBlocked()
         {
-            if (Time.unscaledTime < spawnBlockedNoticeUntil) return;
+            if (Time.time < spawnBlockedNoticeUntil) return;
             Notice("装卸口暂不安全 · 增援等待安全入口");
-            spawnBlockedNoticeUntil = Time.unscaledTime + 3f;
+            spawnBlockedNoticeUntil = Time.time + 3f;
         }
 
         private bool SpawnSecondElite()
@@ -460,13 +460,13 @@ namespace YuDian
             enemies.Clear(); pending.Clear(); sidePending.Clear(); secondElitePending = false;
             spawnedThisWave = 0; nextSpawnDelay = sideWarning = secondEliteWarning = spawnBlockedNoticeUntil = 0f;
         }
-        private void Notice(string value) { message = value; messageUntil = Time.unscaledTime + 4f; }
+        private void Notice(string value) { message = value; messageUntil = Time.time + 4f; }
 
         public void Draw(GUIStyle normal, GUIStyle small, GUIStyle centered, Color panel, Color text, Color accent)
         {
             if (!IsRunning)
             {
-                if (message != null && Time.unscaledTime < messageUntil)
+                if (message != null && Time.time < messageUntil)
                 {
                     YudianHud.Frame(new Rect(300, 545, 680, 52), accent);
                     Label(new Rect(320, 549, 640, 44), message, centered, text);
@@ -566,7 +566,7 @@ namespace YuDian
                 YudianHud.Frame(new Rect(390, 400, 500, 43), new Color(.45f, .78f, .52f));
                 Label(new Rect(410, 403, 460, 37), "E  /  撤离，按已清空波数结算", normal, text);
             }
-            if (message != null && Time.unscaledTime < messageUntil)
+            if (message != null && Time.time < messageUntil)
             {
                 YudianHud.Frame(new Rect(310, 542, 660, 48), accent);
                 Label(new Rect(330, 545, 620, 42), message, centered, accent);
