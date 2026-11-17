@@ -614,6 +614,7 @@ namespace YuDian
             visuals.CreateAlanReplica(alan.transform);
             Box(alan.transform, "求助灯", new Vector3(0, 1.9f, 0), new Vector3(.2f, .2f, .2f), highlight);
             Light beacon = alan.AddComponent<Light>();
+            beacon.shadows = LightShadows.Soft;
             beacon.type = LightType.Point;
             beacon.color = new Color(1f, .72f, .3f);
             beacon.intensity = 1.4f;

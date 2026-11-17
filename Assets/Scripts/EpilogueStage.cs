@@ -16,6 +16,8 @@ namespace YuDian
         private GameObject stage;
         private GameObject agreedDelivery;
         private GameObject katana;
+        private bool katanaWasDrawn;
+        private GameAudio sounds;
         private float swingTimer;
         private Material dark;
         private Material green;
@@ -34,6 +36,7 @@ namespace YuDian
             font = signFont;
             signMaterial = textMaterial;
             visuals = characterVisuals;
+            sounds = GetComponent<GameAudio>();
             // 优先使用用户放在场景里的布局；未添加时使用资源中的默认布局。
             layout = station.GetComponentInChildren<EpilogueLayout>(true);
             var prefab = Resources.Load<EpilogueLayout>("Epilogue/第四章_可视化布局");
@@ -66,6 +69,7 @@ namespace YuDian
             stage = null;
             agreedDelivery = null;
             katana = null;
+            katanaWasDrawn = false;
             swingTimer = 0;
             currentEnding = EscortEnding.None;
         }
@@ -127,14 +131,35 @@ namespace YuDian
             CreateKatana();
         }
 
+        internal void SuspendKatanaForPatrol()
+        {
+            if (katana == null) return;
+            katanaWasDrawn = katana.activeSelf;
+            katana.SetActive(false);
+            swingTimer = 0f;
+        }
+
+        internal void ResumeKatanaAfterPatrol()
+        {
+            if (katana != null) katana.SetActive(katanaWasDrawn);
+        }
+
         public void Tick()
         {
             if (katana == null) return;
-            if (Input.GetKeyDown(KeyCode.Alpha1)) katana.SetActive(!katana.activeSelf);
-            if (katana.activeSelf && Input.GetMouseButtonDown(0) && swingTimer <= 0) swingTimer = .25f;
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                katana.SetActive(!katana.activeSelf);
+                if (katana.activeSelf && sounds != null) sounds.Play(GameAudio.Cue.KatanaDraw);
+            }
+            if (katana.activeSelf && Input.GetMouseButtonDown(0) && swingTimer <= 0)
+            {
+                swingTimer = .25f;
+                if (sounds != null) sounds.Play(GameAudio.Cue.KatanaSwing);
+            }
             swingTimer = Mathf.Max(0, swingTimer - Time.deltaTime);
             katana.transform.localRotation = Quaternion.Euler(
-                15 + (swingTimer > 0 ? -45 * Mathf.Sin(swingTimer / .25f * Mathf.PI) : 0), 15, -20);
+                15 + (swingTimer > 0 ? 45 * Mathf.Sin(swingTimer / .25f * Mathf.PI) : 0), 15, -20);
         }
 
         private void CreateKatana()

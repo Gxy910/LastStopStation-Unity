@@ -44,7 +44,8 @@ namespace YuDian
         private PausePrompt pausePrompt;
         private GUIStyle settingsButton;
         private bool openingIntro;
-        private float openingStarted;
+        private const int OpeningPageCount = 2;
+        private int openingPage;
         private EscortEncounter escort;
         private PatrolMission patrol;
         private bool focusedPosting;
@@ -126,7 +127,8 @@ namespace YuDian
             epilogue.ResetStage();
             story = new StationStory(startingCoins);
             dialogue = null;
-            openingIntro = true; openingStarted = Time.time;
+            openingIntro = true;
+            openingPage = 0;
             BeginChapter();
         }
 
@@ -167,6 +169,20 @@ namespace YuDian
             focusedAmbientNpc = null;
             focusedPosting = false;
             captionEndsAt = Time.time + captionDuration;
+            if (story.Chapter > 1) gameAudio.PlayUi(GameAudio.UiCue.Subtitle);
+            RefreshControls();
+        }
+
+        private void AdvanceOpening(bool skip)
+        {
+            if (!skip && openingPage < OpeningPageCount - 1)
+            {
+                openingPage++;
+                return;
+            }
+
+            openingIntro = false;
+            captionEndsAt = Time.time + captionDuration;
             RefreshControls();
         }
 
@@ -179,6 +195,19 @@ namespace YuDian
 
         private void Update()
         {
+            // The plain C# story and patrol objects cannot be restored by a Play Mode script reload.
+            if (story == null || patrol == null)
+            {
+                enabled = false;
+#if UNITY_EDITOR
+                Debug.LogWarning("车站运行状态已丢失，Unity 已结束本次试玩。请重新点击 Play。", this);
+                UnityEditor.EditorApplication.isPlaying = false;
+#else
+                Debug.LogError("车站运行状态未初始化，已停止车站更新。", this);
+#endif
+                return;
+            }
+
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 if (pausePrompt != PausePrompt.None) pausePrompt = PausePrompt.None;
@@ -196,8 +225,8 @@ namespace YuDian
 
             if (openingIntro)
             {
-                if (Input.GetKeyDown(KeyCode.Space) || Time.time - openingStarted >= 22f)
-                { openingIntro = false; captionEndsAt = Time.time + captionDuration; RefreshControls(); }
+                if (Input.GetKeyDown(KeyCode.Return)) AdvanceOpening(true);
+                else if (Input.GetKeyDown(KeyCode.Space)) AdvanceOpening(false);
                 return;
             }
             if (CaptionIsVisible)
@@ -226,6 +255,7 @@ namespace YuDian
             if (patrol.IsRunning)
             {
                 patrol.Tick(Time.deltaTime);
+                if (!patrol.IsRunning) epilogue.ResumeKatanaAfterPatrol();
                 RefreshControls();
                 return;
             }
@@ -253,7 +283,16 @@ namespace YuDian
             if (focusedPosting)
             {
                 if (!patrol.Begin(story)) { gameAudio.Play(GameAudio.Cue.Denied); ShowDialogue(new StationDialogue("清障值勤板", patrol.PostingLabel(story))); }
-                else { focusedPosting = false; focused = null; focusedDoor = null; focusedAmbientNpc = null; RefreshControls(); }
+                else
+                {
+                    focusedPosting = false;
+                    focused = null;
+                    focusedDoor = null;
+                    focusedAmbientNpc = null;
+                    epilogue.SuspendKatanaForPatrol();
+                    gameAudio.PlayUi(GameAudio.UiCue.Subtitle);
+                    RefreshControls();
+                }
                 return;
             }
             if (focusedAmbientNpc != null)
@@ -382,6 +421,7 @@ namespace YuDian
                 AudioListener.pause = true;
             }
             else RestorePausedWorld();
+            gameAudio.PlayUi(paused ? GameAudio.UiCue.MenuOpen : GameAudio.UiCue.MenuClose);
             RefreshControls();
         }
 
@@ -456,13 +496,7 @@ namespace YuDian
             if (paused)
                 DrawPauseSettings();
             else if (openingIntro)
-            {
-                Label(new Rect(100, 135, 1080, 72), "末日车站", title, accentColor);
-                Label(new Rect(180, 245, 920, 55), "灾后三年，旧客运站仍有人停留。", centered, textColor);
-                Label(new Rect(180, 310, 920, 55), "你的通讯装置坏了，要先找修理工阿岚帮忙。", centered, textColor);
-                Label(new Rect(180, 375, 920, 55), "路哨负责站外接送，也发布清障委托。", centered, textColor);
-                Label(new Rect(180, 500, 920, 42), "按 Space 跳过介绍", small, quietColor);
-            }
+                DrawOpeningIntro();
             else if (CaptionIsVisible)
                 Label(new Rect(35, 312, 1210, 96), story.ChapterCaption, centered, textColor);
             else if (dialogue != null)
@@ -499,12 +533,41 @@ namespace YuDian
             };
         }
 
+        private void DrawOpeningIntro()
+        {
+            bool atStation = openingPage == 0;
+            Label(new Rect(100, 64, 1080, 78), "末日车站", title, accentColor);
+            YudianHud.Frame(new Rect(212, 156, 856, 410), accentColor);
+            Label(new Rect(262, 178, 720, 55), atStation ? "灾后三年 · 旧客运站" : "第一天 · 旧票房的修理工", large, accentColor);
+            Fill(new Rect(263, 245, 753, 1), YudianHud.Line);
+
+            Label(new Rect(262, 263, 753, 70), atStation
+                ? "灾难过去三年，旧客运站成了幸存者的落脚点。站台上还有人摆摊，收车票的旧票房现在用来修理设备。"
+                : "你的通讯装置摔坏了。离开车站前，你得先恢复通话，才能联系到岗亭，问清楚怎么出站。", normal, textColor);
+            Label(new Rect(262, 342, 753, 70), atStation
+                ? "站外还有感染者。路哨的车队负责接送和运货，也会招人去旧货场清障，好让人和物资能继续往来。"
+                : "修理工阿岚就在旧票房。他熟悉站里的设备，先去找他，看看修好这台装置还缺什么。", normal, textColor);
+            Label(new Rect(262, 421, 753, 70), atStation
+                ? "暖棚也给留下来的人提供落脚和工作的地方。他们有东西需要修，急用的零件还得等路哨车队送到。"
+                : "接通通讯后，你可以问路哨怎么出站，也可以在岗亭接一趟货场清障。接下来往哪儿走，由你决定。", normal, textColor);
+
+            Label(new Rect(262, 515, 500, 30), atStation ? "Space  下一页    ·    Enter  跳过" : "Space  开始    ·    Enter  跳过", small, quietColor);
+            Label(new Rect(967, 515, 51, 30), (openingPage + 1) + " / " + OpeningPageCount, small, quietColor);
+        }
+
         private void DrawHud()
         {
-            YudianHud.Frame(new Rect(28, 25, 560, 106), accentColor);
+            bool showPatrolOption = story.CanTakePatrol && (story.CurrentStep == StationStory.Step.ContinueToNextDay || story.Chapter == 4);
+            YudianHud.Frame(new Rect(28, 25, 560, showPatrolOption ? 132 : 106), accentColor);
             Label(new Rect(47, 31, 500, 28), "末日车站  /  " + story.ChapterName, small, accentColor);
             Fill(new Rect(47, 63, 510, 1), YudianHud.Line);
             Label(new Rect(47, 70, 520, 44), escort.IsRunning ? escort.Objective : story.Objective, normal, textColor);
+            if (showPatrolOption)
+            {
+                string patrolHint = story.HasKatana
+                    ? "可选 · 去岗亭接清障，武士刀可带入货场" : "可选 · 路哨岗亭接清障（无尽模式）";
+                Label(new Rect(47, 114, 520, 29), patrolHint, small, accentColor);
+            }
 
             YudianHud.Frame(new Rect(988, 25, 264, 95), accentColor);
             Label(new Rect(1005, 32, 228, 29), $"随身酒币  ·  {story.PersonalCoins} 枚", normal, textColor);

@@ -7,11 +7,14 @@ namespace YuDian
     /// <summary>为车站原型提供轻量的环境声和即时反馈声，声音在启动时预生成。</summary>
     public sealed class GameAudio : MonoBehaviour
     {
-        public enum Cue { Interact, Door, Denied, Reload, ReloadComplete, Swing, Hit, Hurt, WaveStart, WaveClear, Evacuate }
+        public enum Cue { Interact, Door, Denied, Reload, ReloadComplete, Swing, Hit, Hurt, WaveStart, WaveClear, Evacuate, KatanaDraw, KatanaSwing }
         internal enum VolumeChannel { Master, Gunfire, Footsteps, Ambience, Dialogue, Effects }
+        internal enum UiCue { MenuOpen, MenuClose, Subtitle }
 
         private const int Rate = 24000;
         private const string VolumeKeyPrefix = "YuDian.AudioVolume.";
+        // Old builds wrote out 100% master volume even when only a different slider had changed.
+        private const string MasterVolumeKey = VolumeKeyPrefix + "Master.v2";
         private static readonly VolumeChannel[] VolumeChannels = (VolumeChannel[])Enum.GetValues(typeof(VolumeChannel));
         private readonly float[] volumeLevels = new float[VolumeChannels.Length];
         private readonly List<(AudioSource Source, VolumeChannel Channel, float BaseVolume)> volumeRoutes =
@@ -21,7 +24,9 @@ namespace YuDian
         private readonly Dictionary<Cue, AudioClip> clips = new Dictionary<Cue, AudioClip>();
         private AudioClip[] footsteps;
         private bool usesGeneratedFootsteps;
-        private AudioSource effects, ambient, footstepSource, reloadEffects;
+        private readonly Dictionary<UiCue, AudioClip> uiClips = new Dictionary<UiCue, AudioClip>();
+        private AudioSource effects, ambient, footstepSource, reloadEffects, uiSource;
+        private AudioClip recordedKatanaDraw, recordedKatanaSwing;
         private FirstPersonWalker walker;
         private CharacterController body;
         private AudioClip wind;
@@ -32,9 +37,15 @@ namespace YuDian
         {
             originalMasterVolume = AudioListener.volume;
             foreach (VolumeChannel channel in VolumeChannels)
-                volumeLevels[(int)channel] = Mathf.Clamp01(PlayerPrefs.GetFloat(VolumeKeyPrefix + channel, 1f));
+            {
+                float defaultVolume = channel == VolumeChannel.Master ? .7f : 1f;
+                volumeLevels[(int)channel] = Mathf.Clamp01(PlayerPrefs.GetFloat(VolumeKey(channel), defaultVolume));
+            }
             AudioListener.volume = originalMasterVolume * GetVolume(VolumeChannel.Master);
         }
+
+        private static string VolumeKey(VolumeChannel channel) =>
+            channel == VolumeChannel.Master ? MasterVolumeKey : VolumeKeyPrefix + channel;
 
         internal float GetVolume(VolumeChannel channel) => volumeLevels[(int)channel];
 
@@ -59,7 +70,7 @@ namespace YuDian
         {
             if (!volumesDirty) return;
             foreach (VolumeChannel channel in VolumeChannels)
-                PlayerPrefs.SetFloat(VolumeKeyPrefix + channel, GetVolume(channel));
+                PlayerPrefs.SetFloat(VolumeKey(channel), GetVolume(channel));
             PlayerPrefs.Save();
             volumesDirty = false;
         }
@@ -90,6 +101,10 @@ namespace YuDian
             effects = CreateSource(gameObject, .65f, VolumeChannel.Effects, priority: 90);
             footstepSource = CreateSource(gameObject, .65f, VolumeChannel.Footsteps, priority: 90);
             reloadEffects = CreateSource(gameObject, .65f, priority: 90);
+            uiSource = CreateSource(gameObject, .30f, VolumeChannel.Effects, priority: 75);
+            uiSource.ignoreListenerPause = true;
+            foreach (UiCue cue in Enum.GetValues(typeof(UiCue)))
+                uiClips[cue] = Resources.Load<AudioClip>("YudianAudio/Interface/" + cue);
             ambient = CreateSource(gameObject, .025f, VolumeChannel.Ambience, priority: 180);
             ambient.loop = true;
             footsteps = Resources.LoadAll<AudioClip>("YudianAudio/Footsteps");
@@ -105,12 +120,23 @@ namespace YuDian
             clips[Cue.Reload] = MakeNoise("换弹开始", .16f, 880, .30f, 15);
             clips[Cue.ReloadComplete] = MakeNoise("换弹完成", .12f, 1120, .28f, 16);
             clips[Cue.Swing] = MakeNoise("挥动", .13f, 380, .26f, 25);
+            recordedKatanaDraw = Resources.Load<AudioClip>("YudianAudio/Katana/Draw");
+            recordedKatanaSwing = Resources.Load<AudioClip>("YudianAudio/Katana/Swing");
+            clips[Cue.KatanaDraw] = recordedKatanaDraw != null ? recordedKatanaDraw : MakeKatanaSound(true);
+            clips[Cue.KatanaSwing] = recordedKatanaSwing != null ? recordedKatanaSwing : MakeKatanaSound(false);
             clips[Cue.Hit] = MakeNoise("命中", .12f, 260, .34f, 17);
             clips[Cue.Hurt] = MakeNoise("受伤", .25f, 76, .36f, 18);
             clips[Cue.WaveStart] = MakeTone("来袭警示", .32f, 310, .22f, 19);
             clips[Cue.WaveClear] = MakeTone("清场提示", .26f, 460, .22f, 20);
             clips[Cue.Evacuate] = MakeTone("撤离提示", .24f, 370, .22f, 21);
             wind = MakeWind(); ambient.clip = wind; ambient.Play();
+        }
+
+        internal void PlayUi(UiCue cue)
+        {
+            if (uiSource == null || !uiClips.TryGetValue(cue, out AudioClip clip) || clip == null) return;
+            uiSource.clip = clip;
+            uiSource.Play();
         }
 
         public void Play(Cue cue)
@@ -131,6 +157,33 @@ namespace YuDian
             if (stepDistance < stride) return;
             stepDistance -= stride;
             footstepSource.PlayOneShot(footsteps[footIndex++ % footsteps.Length], walker.IsSprinting ? .4f : .25f);
+        }
+
+        private static AudioClip MakeKatanaSound(bool drawing)
+        {
+            float duration = drawing ? .23f : .27f;
+            var samples = new float[Mathf.RoundToInt(duration * Rate)];
+            var rng = new System.Random(drawing ? 913 : 917);
+            float fast = 0f;
+            float slow = 0f;
+            float phase = 0f;
+            for (int i = 0; i < samples.Length; i++)
+            {
+                float time = i / (float)Rate;
+                float progress = time / duration;
+                float noise = (float)rng.NextDouble() * 2f - 1f;
+                fast = Mathf.Lerp(fast, noise, drawing ? .28f : .19f + .25f * progress);
+                slow = Mathf.Lerp(slow, noise, .04f);
+                float sweep = Mathf.Sin(Mathf.PI * progress);
+                if (drawing)
+                {
+                    phase += 2f * Mathf.PI * Mathf.Lerp(920f, 660f, progress) / Rate;
+                    float scrape = (fast - slow) * .31f + Mathf.Sin(phase) * .039f;
+                    samples[i] = scrape * sweep + slow * .25f * Mathf.Exp(-90f * Mathf.Abs(time - .166f)) * sweep;
+                }
+                else samples[i] = ((fast - slow) * .44f + slow * .27f) * sweep * sweep;
+            }
+            return MakeClip(drawing ? "武士刀出鞘" : "武士刀挥砍", samples);
         }
 
         private static AudioClip MakeFootstep(int seed)
@@ -196,7 +249,8 @@ namespace YuDian
         {
             SaveVolumes();
             AudioListener.volume = originalMasterVolume;
-            foreach (AudioClip clip in clips.Values) if (clip != null) Destroy(clip);
+            foreach (AudioClip clip in clips.Values)
+                if (clip != null && clip != recordedKatanaDraw && clip != recordedKatanaSwing) Destroy(clip);
             if (usesGeneratedFootsteps)
                 foreach (AudioClip clip in footsteps) if (clip != null) Destroy(clip);
             if (wind != null) Destroy(wind);

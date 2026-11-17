@@ -1,0 +1,5 @@
+Low poly Katana by tbbk (CC0 1.0).
+Original file: Katana.fbx from the author archive.
+Source: https://opengameart.org/content/low-poly-katana-0
+License: https://creativecommons.org/publicdomain/zero/1.0/
+Unity applies grip alignment and scale in PrototypeVisuals.cs.

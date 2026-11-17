@@ -7,3 +7,8 @@ Characters_Matt.fbx、Characters_Shaun.fbx、Zombie_Atlas.png：Zombie Apocalyps
 https://quaternius.com/packs/zombieapocalypsekit.html
 
 CC0 许可说明：https://creativecommons.org/publicdomain/zero/1.0/
+
+武士刀模型：Low poly Katana，由 tbbk 提供，采用 CC0 1.0。
+模型文件：Assets/Resources/YudianWeapons/Tbbk/Katana.fbx（作者原始 FBX）。
+https://opengameart.org/content/low-poly-katana-0
+运行时对齐握持位置及缩放。

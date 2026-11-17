@@ -6,12 +6,14 @@ namespace YuDian
     {
         internal enum Upgrade { Damage, Magazine, Supply }
         internal enum Shot { Cooling, Reloading, Dry, Miss, Hit, Headshot }
+        private enum Loadout { Gun, Stick, Katana }
         internal const float MeleeRange = 2.6f;
+        internal const float KatanaRange = 3f;
         private const float MeleeRadius = .22f;
         private readonly Transform gun;
         private readonly Transform pistolModel;
         private readonly Transform rifleModel;
-        private readonly Transform stick;
+        private readonly Transform stick, katana;
         private readonly Camera view;
         private readonly Transform player;
         private readonly FirstPersonWalker walker;
@@ -31,7 +33,9 @@ namespace YuDian
         private float ReloadDuration => IsRifle ? 2.7f : 1.9f;
         private bool reloadBoltPlayed;
         private float cooldown, reload, motion, gaitPhase, gaitWeight, equipMotion;
-        private bool usingStick;
+        private Loadout equipped;
+        private int katanaDamage;
+        private static readonly Vector3 KatanaRest = new Vector3(.32f, -.32f, .58f);
 
         public int Capacity { get; private set; }
         public int Loaded { get; private set; }
@@ -52,7 +56,13 @@ namespace YuDian
         public int MagazineIncrement => IsRifle ? 4 : 2;
         public const int ReserveLimit = 180;
         public bool CanUpgradeMagazine => Capacity < MagazineLimit || Reserve < ReserveLimit;
-        public bool UsingStick => usingStick;
+        public bool HasKatana { get; private set; }
+        public bool UsingStick => equipped == Loadout.Stick;
+        public bool UsingKatana => equipped == Loadout.Katana;
+        public bool UsingMelee => equipped != Loadout.Gun;
+        public int ActiveMeleeDamage => UsingKatana ? katanaDamage : MeleeDamage;
+        public float ActiveMeleeRange => UsingKatana ? KatanaRange : MeleeRange;
+        public string EquippedName => UsingKatana ? "武士刀" : UsingStick ? "短棍" : IsRifle ? "AK47" : "手枪";
         public bool Reloading => reload > 0f;
         public bool LastShotHeadshotKill { get; private set; }
         public float ReloadProgress => Reloading ? 1f - reload / ReloadDuration : 0f;
@@ -65,6 +75,7 @@ namespace YuDian
             pistolModel = new GameObject("手枪外观").transform; pistolModel.SetParent(gun, false);
             rifleModel = new GameObject("AK47步枪外观").transform; rifleModel.SetParent(gun, false);
             stick = HeldModel("委托短棍", new Vector3(.29f, -.24f, .47f));
+            katana = HeldModel("清障武士刀", KatanaRest);
             var shader = Shader.Find("Standard");
             Material metal = PatrolYard.Paint(shader, new Color(.13f, .15f, .16f));
             Material edge = PatrolYard.Paint(shader, new Color(.32f, .34f, .33f));
@@ -102,10 +113,12 @@ namespace YuDian
             weaponLightNode.transform.localPosition = new Vector3(0, .12f, .08f);
             weaponLight = weaponLightNode.AddComponent<Light>();
             weaponLight.type = LightType.Point; weaponLight.range = 1.1f; weaponLight.intensity = .85f;
-            weaponLight.color = new Color(1f, .88f, .72f); weaponLight.shadows = LightShadows.None;
-            var flashLight = muzzleFlash.AddComponent<Light>(); flashLight.type = LightType.Point;
+            weaponLight.color = new Color(1f, .88f, .72f); weaponLight.shadows = LightShadows.Soft;
+            var flashLight = muzzleFlash.AddComponent<Light>(); flashLight.type = LightType.Point; flashLight.shadows = LightShadows.Soft;
             flashLight.range = 2.4f; flashLight.intensity = 1.4f; flashLight.color = new Color(1f, .58f, .22f);
             visuals.CreateWeapon(stick, false); stick.localScale = Vector3.one * .52f;
+            visuals.CreateWeapon(katana, true); katana.localScale = Vector3.one * .66f;
+            katana.localRotation = Quaternion.Euler(20, -12, -36);
             PatrolYard.Box(stick, "棍身磨损", new Vector3(.052f, .18f, 0), new Vector3(.012f, .22f, .025f), edge, false);
             PatrolYard.Box(stick, "握柄胶带", new Vector3(0, -.10f, -.078f), new Vector3(.14f, .035f, .012f), grip, false).localRotation = Quaternion.Euler(0, 0, 12);
             PatrolYard.Box(stick, "握柄胶带", new Vector3(0, -.16f, -.078f), new Vector3(.14f, .035f, .012f), grip, false).localRotation = Quaternion.Euler(0, 0, 12);
@@ -138,21 +151,44 @@ namespace YuDian
             Hide();
         }
 
-        public void Begin()
+        public void Begin(bool hasKatana)
         {
+            HasKatana = hasKatana;
             LastShotHeadshotKill = false;
-            Capacity = 8; Loaded = Capacity; Reserve = 16; Damage = 2; DamageUpgrades = 0; MeleeDamage = 2; IsRifle = false;
+            Capacity = 8; Loaded = Capacity; Reserve = 16; Damage = 2; DamageUpgrades = 0; MeleeDamage = 2; katanaDamage = 3; IsRifle = false;
             DamageLimit = 12; StabilityUpgrades = FireRateUpgrades = 0;
             cooldown = reload = motion = gaitPhase = gaitWeight = equipMotion = 0; Equip(false);
         }
-        public void Hide() { weaponLight.enabled = false; gun.gameObject.SetActive(false); stick.gameObject.SetActive(false); muzzleFlash.SetActive(false); audio.Stop(); handlingAudio.Stop(); reloadAudio.Stop(); for (int i = 0; i < blood.Length; i++) { bloodLife[i] = 0; if (blood[i] != null) blood[i].SetActive(false); } reload = motion = 0; }
+        public void Hide() { weaponLight.enabled = false; gun.gameObject.SetActive(false); stick.gameObject.SetActive(false); katana.gameObject.SetActive(false); muzzleFlash.SetActive(false); audio.Stop(); handlingAudio.Stop(); reloadAudio.Stop(); for (int i = 0; i < blood.Length; i++) { bloodLife[i] = 0; if (blood[i] != null) blood[i].SetActive(false); } reload = motion = 0; }
         public void Dispose() { foreach (var drop in blood) if (drop != null) Object.Destroy(drop); if (bloodMaterial != null) Object.Destroy(bloodMaterial); }
-        public void Equip(bool melee)
+        public void Equip(bool melee) => EquipWeapon(melee ? Loadout.Stick : Loadout.Gun);
+
+        public bool EquipKatana()
         {
-            if (melee != usingStick) { reload = 0; reloadAudio.Stop(); motion = 0; equipMotion = .22f; muzzleFlash.SetActive(false); }
+            if (!HasKatana) return false;
+            EquipWeapon(Loadout.Katana);
+            return true;
+        }
+
+        private void EquipWeapon(Loadout next)
+        {
+            if (next != equipped)
+            {
+                reload = 0f;
+                reloadAudio.Stop();
+                motion = 0f;
+                equipMotion = .22f;
+                muzzleFlash.SetActive(false);
+                if (next == Loadout.Katana) sounds.Play(GameAudio.Cue.KatanaDraw);
+            }
+
+            equipped = next;
             weaponLight.enabled = true;
-            usingStick = melee; gun.gameObject.SetActive(!melee); stick.gameObject.SetActive(melee);
-            pistolModel.gameObject.SetActive(!IsRifle); rifleModel.gameObject.SetActive(IsRifle);
+            gun.gameObject.SetActive(!UsingMelee);
+            stick.gameObject.SetActive(UsingStick);
+            katana.gameObject.SetActive(UsingKatana);
+            pistolModel.gameObject.SetActive(!IsRifle);
+            rifleModel.gameObject.SetActive(IsRifle);
             muzzleFlash.transform.localPosition = IsRifle ? new Vector3(0, .035f, .50f) : new Vector3(0, .035f, .213f);
         }
         public void Tick(float dt)
@@ -187,18 +223,21 @@ namespace YuDian
             gaitWeight = Mathf.Lerp(gaitWeight, desired, 1f - Mathf.Exp(-10f * dt));
             float swayX = Mathf.Sin(gaitPhase) * .018f * gaitWeight;
             float swayY = Mathf.Abs(Mathf.Cos(gaitPhase)) * .014f * gaitWeight;
-            float recoil = !usingStick ? Mathf.Clamp01(motion / .18f) * (1f - .2f * StabilityUpgrades) : 0;
+            float recoil = !UsingMelee ? Mathf.Clamp01(motion / .18f) * (1f - .2f * StabilityUpgrades) : 0;
             float reloadPose = Reloading ? Mathf.Sin(Mathf.PI * ReloadProgress) : 0f;
             float equipPose = Mathf.Clamp01(equipMotion / .22f);
             gun.localPosition = gunRest + new Vector3(swayX, swayY + .013f * recoil - .11f * reloadPose - .18f * equipPose, -.035f * recoil);
             gun.localRotation = Quaternion.Euler(-18f * recoil + 25f * reloadPose, -5f - 12f * reloadPose, 18f * reloadPose - swayX * 90f);
-            muzzleFlash.SetActive(gun.gameObject.activeSelf && !usingStick && motion > .105f);
+            muzzleFlash.SetActive(gun.gameObject.activeSelf && !UsingMelee && motion > .105f);
             stick.localPosition = new Vector3(.29f + swayX, -.24f + swayY - .18f * equipPose, .47f);
             stick.localRotation = Quaternion.Euler(14f, 0f, -26f - Mathf.Sin(Mathf.Clamp01(motion / .26f) * Mathf.PI) * 73f - swayX * 90f);
+            float slash = Mathf.Sin(Mathf.Clamp01(motion / .32f) * Mathf.PI);
+            katana.localPosition = KatanaRest + new Vector3(swayX - .22f * slash, swayY - .13f * slash - .18f * equipPose, .07f * slash);
+            katana.localRotation = Quaternion.Euler(20f + 45f * slash, -12f - 28f * slash, -36f - 77f * slash - swayX * 90f);
         }
         public void Reload()
         {
-            if (!usingStick && reload <= 0 && Loaded < Capacity && Reserve > 0)
+            if (!UsingMelee && reload <= 0 && Loaded < Capacity && Reserve > 0)
             {
                 reload = ReloadDuration; reloadBoltPlayed = false;
                 if (IsRifle && mechanicalReloadSound != null) reloadAudio.PlayOneShot(mechanicalReloadSound, .8f);
@@ -223,6 +262,7 @@ namespace YuDian
             // 让短棍与普通感染者的生命同步成长，普通怪约需三次命中。
             int normalHealth = PatrolBalance.Health(PatrolEnemy.Kind.Normal, wave);
             MeleeDamage = (normalHealth + 2) / 3;
+            katanaDamage = Mathf.Max(MeleeDamage + 1, (normalHealth + 1) / 2);
             DamageLimit = 12 + Mathf.Clamp((wave - 11) / 10, 0, 4);
         }
 
@@ -237,7 +277,7 @@ namespace YuDian
                 {
                     IsRifle = true;
                     Capacity = Mathf.Max(Capacity, 20); // 原弹匣和备用弹数量保持不变，需换弹装填。
-                    Equip(usingStick);
+                    EquipWeapon(equipped);
                 }
             }
             if (upgrade == Upgrade.Magazine)
@@ -253,26 +293,28 @@ namespace YuDian
             if (Reloading) return Shot.Reloading;
             if (equipMotion > 0f) return Shot.Cooling;
             if (cooldown > 0) return Shot.Cooling;
-            if (!usingStick && Loaded <= 0) { cooldown = .2f; handlingAudio.PlayOneShot(drySound); return Shot.Dry; }
-            if (!usingStick) Loaded--;
-            motion = usingStick ? .26f : .18f; cooldown = usingStick ? .76f : IsRifle ? .12f - .01f * FireRateUpgrades : .29f;
-            if (!usingStick && IsRifle)
+            if (!UsingMelee && Loaded <= 0) { cooldown = .2f; handlingAudio.PlayOneShot(drySound); return Shot.Dry; }
+            if (!UsingMelee) Loaded--;
+            motion = UsingKatana ? .32f : UsingStick ? .26f : .18f;
+            cooldown = UsingKatana ? .80f : UsingStick ? .70f : IsRifle ? .14f - .01f * FireRateUpgrades : .27f;
+            if (!UsingMelee && IsRifle)
             {
                 // Loaded 已扣除当前这发；最后五发逐步升调，不影响手枪、空响或反馈音。
                 AudioSource voice = rifleVoices[nextRifleVoice++ % rifleVoices.Length];
                 voice.pitch = RifleShotPitch(Loaded + 1);
                 voice.PlayOneShot(rifleSound);
             }
-            else if (usingStick) handlingAudio.PlayOneShot(swingSound);
+            else if (UsingKatana) sounds.Play(GameAudio.Cue.KatanaSwing);
+            else if (UsingStick) handlingAudio.PlayOneShot(swingSound);
             else audio.PlayOneShot(shotSound);
-            if (!usingStick) muzzleFlash.SetActive(true);
+            if (!UsingMelee) muzzleFlash.SetActive(true);
             // HUD 准星位于屏幕正中，始终从相机中心发射；枪的模型位置不参与命中判断。
             Ray aim = view.ViewportPointToRay(new Vector3(.5f, .5f, 0));
-            if (!usingStick) walker.AddRecoil((IsRifle ? .22f : .36f) * (1f - .2f * StabilityUpgrades));
+            if (!UsingMelee) walker.AddRecoil((IsRifle ? .22f : .36f) * (1f - .2f * StabilityUpgrades));
             // 同步本帧由动画驱动的头部受击区后，再进行射线和近战查询。
             Physics.SyncTransforms();
-            RaycastHit[] hits = usingStick
-                ? Physics.SphereCastAll(aim, MeleeRadius, MeleeRange, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide)
+            RaycastHit[] hits = UsingMelee
+                ? Physics.SphereCastAll(aim, MeleeRadius, ActiveMeleeRange, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide)
                 : Physics.RaycastAll(aim, 65f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide);
             RaycastHit nearest = default; float distance = float.PositiveInfinity;
             foreach (RaycastHit hit in hits)
@@ -286,7 +328,7 @@ namespace YuDian
 #if UNITY_EDITOR
             if (UnityEditor.EditorPrefs.GetBool("YuDian.Patrol.DebugDraw", false))
             {
-                float drawDistance = nearest.collider == null ? (usingStick ? MeleeRange : 65f) : nearest.distance;
+                float drawDistance = nearest.collider == null ? (UsingMelee ? ActiveMeleeRange : 65f) : nearest.distance;
                 Debug.DrawRay(aim.origin, aim.direction * drawDistance, nearest.collider == null ? Color.red : Color.yellow, 2f);
                 Debug.Log("清障射线: " + (nearest.collider == null ? "未命中" : nearest.collider.name) + " · 距离 " + drawDistance.ToString("F2"));
             }
@@ -304,9 +346,9 @@ namespace YuDian
                 if (block.collider.GetComponentInParent<PatrolEnemy>() == target) continue;
                 return Shot.Miss;
             }
-            bool headshot = !usingStick && target.IsHeadHit(nearest.collider);
+            bool headshot = !UsingMelee && target.IsHeadHit(nearest.collider);
             // 爆头按身体伤害的 1.75 倍向上取整。
-            int appliedDamage = usingStick ? MeleeDamage : headshot
+            int appliedDamage = UsingMelee ? ActiveMeleeDamage : headshot
                 ? (int)System.Math.Min(int.MaxValue, ((long)Damage * 7L + 3L) / 4L)
                 : Damage;
             for (int i = 0; i < 5; i++)
@@ -317,7 +359,7 @@ namespace YuDian
                 bloodLife[slot] = .35f; blood[slot].SetActive(true);
             }
             LastShotHeadshotKill = headshot && target.Health <= appliedDamage;
-            target.TakeHit(appliedDamage, usingStick, aim.direction);
+            target.TakeHit(appliedDamage, UsingMelee, aim.direction);
             if (LastShotHeadshotKill) feedbackAudio.PlayOneShot(headshotKillSound, .85f);
             return headshot ? Shot.Headshot : Shot.Hit;
         }

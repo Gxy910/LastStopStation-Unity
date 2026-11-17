@@ -63,12 +63,12 @@ namespace YuDian
         }
 
         public bool IsPosting(Collider col) => col != null && col.transform.IsChildOf(yard.Posting);
-        public bool CanStart(StationStory story) => story.DeviceRepaired && story.Chapter <= 2;
+        public bool CanStart(StationStory story) => story.CanTakePatrol && station.activeInHierarchy;
         public string PostingLabel(StationStory story)
         {
             if (!story.DeviceRepaired) return "通讯装置修好后开放清障委托";
-            if (!CanStart(story)) return "接送任务进行中，暂不接单";
-            return "领取清障委托 · 最高撤离 " + Best + " 波";
+            if (!CanStart(story)) return "请在车站的路哨岗亭接取清障委托";
+            return "接取清障 · 无尽模式 · 纪录 " + Best + " 波";
         }
 
         public bool Begin(StationStory story)
@@ -78,20 +78,21 @@ namespace YuDian
             debugNoRecord = false;
 #endif
             returnPosition = walker.transform.position; returnRotation = walker.transform.rotation;
-            station.SetActive(false); yard.Root.SetActive(true);
+            station.SetActive(false);
+            yard.Root.SetActive(true);
             stationAmbient = RenderSettings.ambientLight;
             stationClearFlags = walker.ViewCamera.clearFlags; stationBackground = walker.ViewCamera.backgroundColor;
             walker.ViewCamera.clearFlags = CameraClearFlags.SolidColor;
             walker.ViewCamera.backgroundColor = new Color(.065f, .08f, .095f);
-            RenderSettings.ambientLight = stationAmbient * .72f;
+            RenderSettings.ambientLight = Color.black;
             dimmedLights.Clear(); stationLightIntensity.Clear();
             foreach (Light light in Object.FindObjectsOfType<Light>())
             {
                 if (light.type != LightType.Directional) continue;
-                dimmedLights.Add(light); stationLightIntensity.Add(light.intensity); light.intensity *= .75f;
+                dimmedLights.Add(light); stationLightIntensity.Add(light.intensity); light.intensity *= .50f;
             }
             walker.MoveTo(yard.Arrival); Physics.SyncTransforms();
-            weapon.Begin(); health = 3; armor = medkits = 0; wave = cleared = 0; IsRunning = true;
+            weapon.Begin(story.HasKatana); health = 3; armor = medkits = 0; wave = cleared = 0; IsRunning = true;
             lastHitHeadshot = false; headshotProgress = 0; message = null; invulnerability = damageFlash = hitFlash = defeatTimer = 0; tutorial = true;
             return true;
         }
@@ -114,6 +115,8 @@ namespace YuDian
             }
             if (Input.GetKeyDown(KeyCode.Alpha1)) weapon.Equip(false);
             if (Input.GetKeyDown(KeyCode.Alpha2)) weapon.Equip(true);
+            if (Input.GetKeyDown(KeyCode.Alpha3) && !weapon.EquipKatana())
+                Notice("还没有获得武士刀");
             if (Input.GetKeyDown(KeyCode.R)) weapon.Reload();
             if (Input.GetKeyDown(KeyCode.F)) UseMedkit();
             bool fire = WantsFire(Input.GetMouseButtonDown(0), Input.GetMouseButton(0));
@@ -163,7 +166,11 @@ namespace YuDian
         internal void HandleShot(PatrolWeapon.Shot shot)
         {
             if (!IsRunning) return;
-            if (shot == PatrolWeapon.Shot.Dry) { Notice("弹匣空了 · R 换弹，或按 2 切换短棍"); return; }
+            if (shot == PatrolWeapon.Shot.Dry)
+            {
+                Notice(weapon.HasKatana ? "弹匣空了 · R 换弹，也可按 2 用短棍或 3 用武士刀" : "弹匣空了 · R 换弹，或按 2 切换短棍");
+                return;
+            }
             if (shot != PatrolWeapon.Shot.Hit && shot != PatrolWeapon.Shot.Headshot) return;
             lastHitHeadshot = shot == PatrolWeapon.Shot.Headshot; hitFlash = .24f; if (!weapon.LastShotHeadshotKill) sounds.Play(GameAudio.Cue.Hit);
             if (wave < 51 || !weapon.LastShotHeadshotKill) return;
@@ -175,7 +182,7 @@ namespace YuDian
         }
 
         internal bool WantsFire(bool pressed, bool held) => pressed ||
-            (weapon.IsRifle && !weapon.UsingStick && weapon.Loaded > 0 && held);
+            (weapon.IsRifle && !weapon.UsingMelee && weapon.Loaded > 0 && held);
 
         internal bool ChooseUpgrade(PatrolWeapon.Upgrade choice)
         {
@@ -423,7 +430,9 @@ namespace YuDian
             RenderSettings.ambientLight = stationAmbient;
             walker.ViewCamera.clearFlags = stationClearFlags; walker.ViewCamera.backgroundColor = stationBackground;
             for (int i = 0; i < dimmedLights.Count; i++) if (dimmedLights[i] != null) dimmedLights[i].intensity = stationLightIntensity[i];
-            dimmedLights.Clear(); stationLightIntensity.Clear(); station.SetActive(true);
+            dimmedLights.Clear();
+            stationLightIntensity.Clear();
+            station.SetActive(true);
             returnPoint.SetPositionAndRotation(returnPosition, returnRotation);
             walker.MoveTo(returnPoint); Physics.SyncTransforms();
             Notice(evacuated ? "撤离完成 · 本次清空 " + cleared + " 波 · 装备已交还" : "委托失败 · 未更新纪录 · 装备已交还");
@@ -478,7 +487,7 @@ namespace YuDian
                 YudianHud.Frame(new Rect(145, 120, 990, 475), accent);
                 Label(new Rect(180, 145, 920, 46), "货场清障  /  出勤说明", centered, accent);
                 Label(new Rect(205, 210, 880, 40), "WASD 移动 · Shift 奔跑 · 左键攻击", normal, text);
-                Label(new Rect(205, 255, 880, 40), "1 枪械 · 2 短棍 · R 换弹 · F 使用血包", normal, text);
+                Label(new Rect(205, 255, 880, 40), weapon.HasKatana ? "1 枪械 · 2 短棍 · 3 武士刀 · R 换弹 · F 使用血包" : "1 枪械 · 2 短棍 · R 换弹 · F 使用血包", normal, text);
                 Label(new Rect(205, 300, 880, 40), "每波结束：7 / 8 / 9 选择强化，Space 开始下一波", normal, text);
                 Label(new Rect(205, 345, 880, 40), "返回绿灯门按 E 撤离，只结算已清空的波次", normal, text);
                 Label(new Rect(205, 435, 880, 46), "按 Space 开始第一波", centered, accent);
@@ -499,9 +508,9 @@ namespace YuDian
             Label(new Rect(202, 95, 220, 23), "护甲 " + armor + "/1   血包 " + medkits + "/3", small, YudianHud.Muted);
 
             YudianHud.Frame(new Rect(986, 25, 266, 103), accent);
-            Label(new Rect(1003, 33, 224, 23), weapon.UsingStick ? "装备  /  短棍" : weapon.IsRifle ? "装备  /  AK47" : "装备  /  手枪", small, accent);
-            Label(new Rect(1003, 62, 230, 32), weapon.UsingStick ? "近战应急" : weapon.Loaded + " / " + weapon.Capacity + "    备用 " + weapon.Reserve, normal, text);
-            Label(new Rect(1003, 96, 225, 22), weapon.Reloading ? "正在换弹" : weapon.UsingStick ? "伤害 " + weapon.MeleeDamage + " · 距离约 2.6 米" : weapon.IsRifle ? "按住左键连射 · R 换弹" : "R  换弹    ·    1 / 2 切换", small, YudianHud.Muted);
+            Label(new Rect(1003, 33, 224, 23), "装备  /  " + weapon.EquippedName, small, accent);
+            Label(new Rect(1003, 62, 230, 32), weapon.UsingMelee ? "近战" : weapon.Loaded + " / " + weapon.Capacity + "    备用 " + weapon.Reserve, normal, text);
+            Label(new Rect(1003, 96, 225, 22), weapon.Reloading ? "正在换弹" : weapon.UsingMelee ? $"伤害 {weapon.ActiveMeleeDamage} · 距离约 {weapon.ActiveMeleeRange:0.#} 米" : weapon.IsRifle ? "按住左键连射 · R 换弹" : "按 R 换弹", small, YudianHud.Muted);
             if (weapon.Reloading)
             {
                 Fill(new Rect(1003, 117, 216, 4), new Color(.20f, .23f, .20f));
@@ -518,7 +527,8 @@ namespace YuDian
                 Label(new Rect(663, 340, 100, 30), lastHitHeadshot ? "爆头" : "命中", small, hit);
             }
             YudianHud.Frame(new Rect(28, 656, 1005, 40), new Color(.48f, .57f, .48f));
-            Label(new Rect(40, 658, 980, 35), "WASD 移动  ·  Shift 奔跑  ·  左键攻击  ·  1 枪  2 短棍  ·  R 换弹  ·  F 血包  ·  绿灯门 E 撤离", small, text);
+            Label(new Rect(40, 658, 980, 35), "WASD 移动  ·  Shift 奔跑  ·  左键攻击  ·  1 枪  2 短棍" + (weapon.HasKatana ? "  3 武士刀" : "") +
+                "  ·  R 换弹  ·  F 血包  ·  绿灯门 E 撤离", small, text);
             if (betweenWaves)
             {
                 YudianHud.Frame(new Rect(195, 140, 890, 220), accent);

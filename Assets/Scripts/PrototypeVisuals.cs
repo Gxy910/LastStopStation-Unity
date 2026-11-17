@@ -14,6 +14,8 @@ namespace YuDian
         private readonly List<Material> materials = new List<Material>();
         private readonly List<Texture2D> textures = new List<Texture2D>();
         private Material skin, skinDark, eye, white, hair, greyHair, jacket, armor, metal, brass, cloth, blood, bone, infected, pale;
+        private Mesh katanaBlade;
+        private Material katanaSteel, katanaEdge;
         private Material characterAtlas;
         private Material zombieAtlas;
         private Transform stationAlan;
@@ -63,6 +65,7 @@ namespace YuDian
         {
             foreach (Material material in materials) if (material != null) Destroy(material);
             foreach (Texture2D texture in textures) if (texture != null) Destroy(texture);
+            if (katanaBlade != null) Destroy(katanaBlade);
         }
 
         private Texture2D MakeMottledSkin()
@@ -326,12 +329,91 @@ namespace YuDian
                 for (int i = 0; i < 3; i++) Piece(root, PrimitiveType.Cylinder, "铁箍", new Vector3(0, .32f + i * .045f, 0), new Vector3(.082f, .012f, .082f), metal);
                 return;
             }
-            Piece(root, PrimitiveType.Cube, "刀柄", new Vector3(0, -.18f, 0), new Vector3(.06f, .25f, .06f), armor);
-            for (int i = 0; i < 4; i++) Piece(root, PrimitiveType.Cube, "柄绳", new Vector3(0, -.26f + i * .05f, -.032f), new Vector3(.064f, .014f, .008f), white).localRotation = Quaternion.Euler(0, 0, i % 2 == 0 ? 25 : -25);
-            Piece(root, PrimitiveType.Cylinder, "圆形护手", new Vector3(0, -.04f, 0), new Vector3(.15f, .015f, .15f), brass);
-            Piece(root, PrimitiveType.Cube, "刀身", new Vector3(.012f, .31f, 0), new Vector3(.075f, .70f, .025f), metal).localRotation = Quaternion.Euler(0, 0, -2);
-            Piece(root, PrimitiveType.Cube, "刃口", new Vector3(.052f, .31f, -.002f), new Vector3(.012f, .69f, .028f), white).localRotation = Quaternion.Euler(0, 0, -2);
-            Piece(root, PrimitiveType.Cube, "刀尖", new Vector3(.03f, .70f, 0), new Vector3(.052f, .10f, .022f), metal).localRotation = Quaternion.Euler(0, 0, 18);
+            GameObject katanaModel = Resources.Load<GameObject>("YudianWeapons/Tbbk/Katana");
+            if (katanaModel != null)
+            {
+                Transform imported = Instantiate(katanaModel, root, false).transform;
+                imported.name = "tbbk 武士刀";
+                // 对齐原模型的护手与持刀坐标，沿用原有的收刀、跑步和挥砍姿势。
+                imported.localPosition = new Vector3(.005f, .326f, 0f);
+                imported.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                imported.localScale = Vector3.one * .96f;
+                return;
+            }
+
+            Piece(root, PrimitiveType.Cylinder, "深色刀柄", new Vector3(0, -.175f, 0), new Vector3(.063f, .12f, .048f), armor);
+            Piece(root, PrimitiveType.Cylinder, "柄头", new Vector3(0, -.294f, 0), new Vector3(.068f, .014f, .052f), brass);
+            Piece(root, PrimitiveType.Cylinder, "椭圆刀镡", new Vector3(0, -.046f, 0), new Vector3(.170f, .009f, .127f), metal);
+            Piece(root, PrimitiveType.Cylinder, "铜色刀箍", new Vector3(0, -.018f, 0), new Vector3(.086f, .018f, .053f), brass);
+            for (int i = 0; i < 5; i++)
+            {
+                float y = -.258f + i * .040f;
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    Transform wrap = Piece(root, PrimitiveType.Cube, "交错柄绳",
+                        new Vector3(0, y, side * .025f), new Vector3(.067f, .012f, .009f), cloth);
+                    wrap.localRotation = Quaternion.Euler(0f, 0f, side * (i % 2 == 0 ? 27f : -27f));
+                }
+            }
+
+            if (katanaBlade == null)
+            {
+                katanaBlade = CreateKatanaBlade();
+                katanaSteel = Mat(new Color(.45f, .49f, .51f), .55f);
+                katanaEdge = Mat(new Color(.71f, .74f, .75f), .38f);
+            }
+            Transform blade = Node(root, "弧形刀身与斜切刃", Vector3.zero);
+            blade.gameObject.AddComponent<MeshFilter>().sharedMesh = katanaBlade;
+            blade.gameObject.AddComponent<MeshRenderer>().sharedMaterials = new[] { katanaSteel, katanaEdge };
+        }
+
+        private static Mesh CreateKatanaBlade()
+        {
+            // Each section is (curve offset, height, width, thickness).
+            var profile = new[]
+            {
+                new Vector4(0f, .005f, .079f, .034f),
+                new Vector4(.008f, .22f, .074f, .031f),
+                new Vector4(.027f, .43f, .064f, .026f),
+                new Vector4(.057f, .62f, .053f, .022f),
+                new Vector4(.083f, .71f, .040f, .017f),
+                new Vector4(.103f, .765f, .004f, .004f)
+            };
+            const int sides = 5;
+            var vertices = new Vector3[profile.Length * sides];
+            var steel = new List<int>();
+            var edge = new List<int>();
+            for (int section = 0; section < profile.Length; section++)
+            {
+                Vector4 p = profile[section];
+                float spine = p.x - p.z * .5f, bevel = p.x + p.z * .13f, tip = p.x + p.z * .5f, depth = p.w * .5f;
+                int start = section * sides;
+                vertices[start] = new Vector3(spine, p.y, -depth);
+                vertices[start + 1] = new Vector3(spine, p.y, depth);
+                vertices[start + 2] = new Vector3(bevel, p.y, depth);
+                vertices[start + 3] = new Vector3(tip, p.y, 0f);
+                vertices[start + 4] = new Vector3(bevel, p.y, -depth);
+                if (section == profile.Length - 1) continue;
+                for (int side = 0; side < sides; side++)
+                {
+                    int a = start + side, b = start + (side + 1) % sides;
+                    var surface = side == 2 || side == 3 ? edge : steel;
+                    surface.Add(a); surface.Add(b); surface.Add(b + sides);
+                    surface.Add(a); surface.Add(b + sides); surface.Add(a + sides);
+                }
+            }
+            int last = vertices.Length - sides;
+            for (int i = 1; i < sides - 1; i++)
+            {
+                steel.Add(0); steel.Add(i + 1); steel.Add(i);
+                edge.Add(last); edge.Add(last + i); edge.Add(last + i + 1);
+            }
+            var mesh = new Mesh { name = "武士刀曲面网格", vertices = vertices, subMeshCount = 2 };
+            mesh.SetTriangles(steel, 0);
+            mesh.SetTriangles(edge, 1);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         private static Transform Node(Transform parent, string name, Vector3 position)

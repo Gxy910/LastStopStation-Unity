@@ -9,3 +9,13 @@ PatrolBolt.wav：裁剪并调整音量，来源 https://github.com/StarKnightt/c
 《末日车站》脚步音效来源（CC0 1.0）
 Footsteps/DirtStep01.wav 至 DirtStep04.wav：从 Nox_Sound 的 Footsteps_Walk.wav 开头裁出前四声泥地脚步，统一应用同一增益并作短淡入淡出。
 来源：https://freesound.org/people/Nox_Sound/sounds/490951/
+
+界面音效
+Interface/MenuOpen.wav、MenuClose.wav：Kenney 的免费 UI SFX Set（CC0 1.0），原文件分别为 switch22.wav 和 click2.wav。裁剪、降高频并调整电平。
+来源：https://opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks
+Interface/Subtitle.wav：为《末日车站》合成的提示音，用于后续章节字幕和货场说明。
+
+武士刀拟音（CC0 1.0）
+Katana/Swing.wav：qubodup 的 Swosh Sword Swing，竹杆扫风录音。来源：https://freesound.org/people/qubodup/sounds/59992/
+Katana/Draw.wav：hushless 的 Sword Unsheath，皮刀鞘出刀录音。来源：https://freesound.org/people/hushless/sounds/772113/
+两段取自作者页播放音频，裁剪、转换为单声道，调整高低频和电平。

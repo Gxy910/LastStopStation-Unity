@@ -38,17 +38,7 @@ namespace YuDian
                 postingGroup.SetPositionAndRotation(marker.transform.position, marker.transform.rotation);
                 marker.gameObject.SetActive(false);
             }
-            Posting = Box(postingGroup, "路哨清障值勤板", Vector3.zero,
-                new Vector3(1.38f, .96f, .12f), steel);
-            Sign(Posting, "清障委托", new Vector3(0, .17f, -.55f), font, textMaterial, .052f);
-            Sign(Posting, "领枪 · 货场 · 撤离", new Vector3(0, -.20f, -.55f), font, textMaterial, .024f);
-            Box(postingGroup, "清障牌指示灯", new Vector3(0, .55f, -.09f),
-                new Vector3(1.20f, .10f, .10f), amber, false);
-            Transform lightNode = Node(postingGroup, "清障牌照明", new Vector3(0, .72f, -.40f));
-            Light boardLight = lightNode.gameObject.AddComponent<Light>();
-            boardLight.type = LightType.Point; boardLight.color = new Color(1f, .72f, .35f);
-            boardLight.range = 3.5f; boardLight.intensity = 1.1f;
-
+            Posting = BuildPosting(postingGroup, font, textMaterial, steel, amber);
 
             PatrolYardLayout sceneLayout = null;
             foreach (var candidate in Object.FindObjectsOfType<PatrolYardLayout>(true))
@@ -73,6 +63,7 @@ namespace YuDian
             Box(side, "侧门门板", new Vector3(0, 1.30f, 0), new Vector3(.07f, 2.6f, 2.35f), steel, false);
             Box(side, "侧门警示灯", new Vector3(-.08f, 2.75f, 0), new Vector3(.12f, .13f, 2.2f), amber, false);
             sideLamp = Node(side, "侧门预警照明", new Vector3(-.35f, 2.65f, 0)).gameObject.AddComponent<Light>();
+            sideLamp.shadows = LightShadows.Soft;
             sideLamp.type = LightType.Point; sideLamp.color = new Color(1f, .32f, .08f); sideLamp.range = 5f; sideLamp.intensity = 1.6f;
             sideGate.SetActive(false);
             Root.SetActive(false);
@@ -216,6 +207,22 @@ namespace YuDian
             Vector3 delta = target - from;
             return delta.sqrMagnitude < .0001f ||
                 !obstacle.IntersectRay(new Ray(from, delta.normalized), out float distance) || distance >= delta.magnitude;
+        }
+
+        private static Transform BuildPosting(Transform postingGroup, Font font, Material textMaterial, Material steel, Material amber)
+        {
+            Transform board = Box(postingGroup, "路哨清障值勤板", Vector3.zero,
+                new Vector3(1.38f, .96f, .12f), steel);
+            Sign(board, "清障委托", new Vector3(0, .17f, -.55f), font, textMaterial, .052f);
+            Sign(board, "无尽模式 · 领枪 · 撤离", new Vector3(0, -.20f, -.55f), font, textMaterial, .024f);
+            Box(postingGroup, "清障牌指示灯", new Vector3(0, .55f, -.09f),
+                new Vector3(1.20f, .10f, .10f), amber, false);
+            Transform lightNode = Node(postingGroup, "清障牌照明", new Vector3(0, .72f, -.40f));
+            Light boardLight = lightNode.gameObject.AddComponent<Light>();
+            boardLight.shadows = LightShadows.Soft;
+            boardLight.type = LightType.Point; boardLight.color = new Color(1f, .72f, .35f);
+            boardLight.range = 3.5f; boardLight.intensity = 1.1f;
+            return board;
         }
 
         internal static Material Paint(Shader shader, Color color, bool lit = false)

@@ -55,6 +55,7 @@ namespace YuDian
         public Step CurrentStep { get; private set; } = Step.MeetAlan;
         public int PersonalCoins { get; private set; }
         public bool DeviceRepaired { get; private set; }
+        public bool CanTakePatrol => DeviceRepaired && Chapter != 3 && CurrentStep != Step.MilestoneComplete;
         public bool LampDelivered { get; private set; }
         public bool ContractSigned { get; private set; }
         public int RepairFee { get; private set; }
@@ -149,8 +150,16 @@ namespace YuDian
             if (!DeviceRepaired)
                 return new StationDialogue("通讯装置", "接通了电源。听筒里只有断断续续的杂音。");
 
+            if (Chapter == 1)
+                return new StationDialogue("通讯 · 路哨值班台",
+                    "收到。货场清障已经开放。沿站内通道去路哨岗亭，到清障值勤板按 E 接单。");
+
+            if (Chapter == 3)
+                return new StationDialogue("通讯 · 路哨值班台", "收到。请到会合牌前等接送队。");
+
             return new StationDialogue("通讯 · 路哨值班台",
-                "值班台收到。站内通道开放，站外接送请到岗亭登记。");
+                Chapter == 4 ? "收到。岗亭的清障值勤板还在，想出勤就过去登记。"
+                    : "值班台收到。站内通道开放，站外接送请到岗亭登记。");
         }
 
         private StationDialogue TalkToAlan()
@@ -180,7 +189,8 @@ namespace YuDian
                     CurrentStep = Step.ContinueToNextDay;
                     return new StationDialogue("阿岚",
                         "是这包。你等等，我先把松掉的接头弄好。",
-                        "能双向通话了。按 R 呼一下值班台，看看那边能不能收到。");
+                        "能双向通话了。按 R 呼一下值班台，看看那边能不能收到。",
+                        "想试试货场清障，可以现在去路哨岗亭的值勤板接单。想继续赶路，就去出站门。");
                 case Step.ContinueToNextDay:
                     return new StationDialogue("阿岚", "今天的活儿差不多了。你明早来一趟，我有件事想跟你说。");
                 case Step.HearOffers:
@@ -264,6 +274,11 @@ namespace YuDian
                     "四枚，收讫。车费已经付清，乘客是你和阿岚两人。",
                     "收据拿好。从出站门去站外接送牌，我们会派两个人来接。");
             }
+
+            if (Chapter == 1)
+                return new StationDialogue("路哨站长", CanTakePatrol
+                    ? "通讯装置修好了？货场正缺人。到岗亭外的清障值勤板按 E，就能领枪出勤。"
+                    : "清障要能和岗亭通话。先去旧票房找阿岚，把通讯装置修好。");
 
             return new StationDialogue("路哨站长", ContractSigned
                 ? "收据在你手上。出站后去接送牌会合。"
