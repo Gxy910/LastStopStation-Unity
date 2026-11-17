@@ -53,6 +53,8 @@
 4. **修复方法**　初始化时记录球心在 `Head` 骨骼坐标系中的偏移。每次动画采样后，通过 `PoseUpdated` 用最新姿势更新球心，射线查询前调用 `Physics.SyncTransforms()`。这样可以保留受击区原有的尺寸与定位，同时让它跟上动画。
 5. **验证结果**　相同的 45 组条件下，修改前有 **42 次爆头判定、1 次身体命中、2 次未命中**，修改后 **45 次均判为爆头**。另做了身体伤害、玩家位移后射击、墙体遮挡和前方敌人遮挡的自动回归。这些结果对应指定动画姿势和参考点。连续移动瞄准、头颈交界以及多敌人实战中的手感仍需人工试玩。
 
+验证记录：[修复前 45 组](Docs/Verification/logs/head_before_edges.log) · [修复后 45 组](Docs/Verification/logs/head_after_full.log) · [动画姿势下的头部受击区回归](Docs/Verification/logs/PatrolHitCoverageChecks-resume-final.log)，关键词 `HEAD REPRO SUMMARY`、`COVERAGE PASS`。
+
 ### 案例二　第二只精英可能与第一只重叠出生
 
 1. **现象与复现**　在测试副本跳到双精英波，让第一只精英停在原装卸口，再触发第二只进场。修复前，两只精英的生成位置重合。
@@ -60,10 +62,18 @@
 3. **修复方法**　生成前先检查出生点与玩家的距离，再用胶囊体重叠查询检查出生体积。原入口被挡时检查另一个入口，两边都被挡时保留待入场状态，等空间腾出再生成。
 4. **验证结果**　同样布置下复测，第二只精英从可用的原装卸口进入，两只不再重叠。另验证了双入口被挡时继续等待、等待期间不提前清波，以及生成点与玩家保持距离。
 
+验证记录：[修复前重叠](Docs/Verification/logs/spawn_safety_before.log) · [修复后分离](Docs/Verification/logs/spawn_safety_after.log) · [出生安全与入口切换回归](Docs/Verification/logs/PatrolSpawnSafetyChecksResume-resume-final.log)，关键词 `SPAWN REPRO`、`SPAWN SAFETY`。
+
 [出生空间检查与入口切换](Assets/Scripts/Patrol/PatrolMission.cs#L314) · [第二只精英的入场逻辑](Assets/Scripts/Patrol/PatrolMission.cs#L346)
 
 ## 验证范围与资源
 
 上述玩法与两项修复均已接入主工程。复现、跳波和自动回归使用单独的 Unity 测试副本；README 中的验证数字来自该副本的测试记录。手动体验可从仓库中的 `OldStation` 场景按上面的路线进入货场。
+
+11 份原始 Unity Editor 日志（共约 1.1 MB）和检查脚本收录在 [Docs/Verification](Docs/Verification/README.md)：那里写了复现命令、每份日志对应哪条结论，以及关键词速查。
+
+其余自动回归覆盖：51/61/71/81 波血量与双精英节奏（`PatrolEndgameChecks`）、委托-首波-强化-撤离主流程（`PatrolRouteChecks`）、近战命中与血迹（`PatrolMeleeChecks`）、精英冲撞与扣血（`PatrolChargeResumeChecks`）、侧门预警与回退（`PatrolSideResumeChecks`）。
+
+`Docs/Verification/scripts/` 是测试副本里检查脚本的原样拷贝，仅作参考，不参与主工程编译。
 
 角色模型来源见 [第三方模型来源](第三方模型来源.txt)。
