@@ -320,7 +320,7 @@ namespace YuDian
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            if (!UnityEditor.EditorPrefs.GetBool("YuDian.Patrol.DebugDraw", false) || !Application.isPlaying) return;
+            if (!EditorHooks.ShouldDebugDraw || !Application.isPlaying) return;
             foreach (Collider area in GetComponentsInChildren<Collider>())
             {
                 if (!area.isTrigger) continue;

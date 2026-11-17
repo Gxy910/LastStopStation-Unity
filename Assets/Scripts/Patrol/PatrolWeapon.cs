@@ -326,7 +326,7 @@ namespace YuDian
                 distance = hit.distance; nearest = hit;
             }
 #if UNITY_EDITOR
-            if (UnityEditor.EditorPrefs.GetBool("YuDian.Patrol.DebugDraw", false))
+            if (EditorHooks.ShouldDebugDraw)
             {
                 float drawDistance = nearest.collider == null ? (UsingMelee ? ActiveMeleeRange : 65f) : nearest.distance;
                 Debug.DrawRay(aim.origin, aim.direction * drawDistance, nearest.collider == null ? Color.red : Color.yellow, 2f);
@@ -348,9 +348,7 @@ namespace YuDian
             }
             bool headshot = !UsingMelee && target.IsHeadHit(nearest.collider);
             // 爆头按身体伤害的 1.75 倍向上取整。
-            int appliedDamage = UsingMelee ? ActiveMeleeDamage : headshot
-                ? (int)System.Math.Min(int.MaxValue, ((long)Damage * 7L + 3L) / 4L)
-                : Damage;
+            int appliedDamage = UsingMelee ? ActiveMeleeDamage : headshot ? HeadshotDamage(Damage) : Damage;
             for (int i = 0; i < 5; i++)
             {
                 int slot = nextBlood++ % blood.Length;
@@ -365,6 +363,10 @@ namespace YuDian
         }
 
         internal static float RifleShotPitch(int roundsBeforeShot) => 1f + .12f * Mathf.Clamp01((5f - roundsBeforeShot) / 4f);
+
+        /// <summary>爆头伤害：身体伤害的 1.75 倍向上取整，用 long 计算避免大伤害溢出。</summary>
+        internal static int HeadshotDamage(int damage) =>
+            (int)System.Math.Min(int.MaxValue, ((long)damage * 7L + 3L) / 4L);
 
         private static bool CreateAssetModel(Transform parent, string path, float scale)
         {

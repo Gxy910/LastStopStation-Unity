@@ -67,8 +67,7 @@ namespace YuDian
             if (Application.isPlaying) return;
             foreach (Transform marker in transform)
             {
-                UnityEditor.Handles.color = new Color(1f, .78f, .30f);
-                UnityEditor.Handles.Label(marker.position + Vector3.up * 1.9f, marker.name);
+                EditorHooks.Label(marker.position + Vector3.up * 1.9f, marker.name, new Color(1f, .78f, .30f));
             }
         }
 #endif

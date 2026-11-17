@@ -24,8 +24,7 @@ namespace YuDian
             if (point == null) return;
             Gizmos.color = color;
             Gizmos.DrawWireSphere(point.position + Vector3.up * .15f, .3f);
-            UnityEditor.Handles.color = color;
-            UnityEditor.Handles.Label(point.position + Vector3.up * .65f, label);
+            EditorHooks.Label(point.position + Vector3.up * .65f, label, color);
         }
 #endif
     }

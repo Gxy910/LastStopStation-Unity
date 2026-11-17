@@ -1,0 +1,348 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-lenovo" at "2026-11-17T12:53:03.94341Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 38468, path: "C:/Program Files/Unity Hub/UnityLicensingClient_V1/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Error: HandshakeResponse reported an error:
+	ResponseCode: 505
+	ResponseStatus: Unsupported protocol version '1.16.2'.
+[Licensing::Module] Error: Failed to handshake to channel: "LicenseClient-lenovo"
+[Licensing::IpcConnector] LicenseClient-lenovo channel disconnected successfully.
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-lenovo-2022.3.62" at "2026-11-17T12:53:04.0435573Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 46760, path: "E:/2022.3.62f2c1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.16.2+bdef8f5
+  Session Id:              7794448063f5492f9501eac1a798d9b6
+  Correlation Id:          2163730fec25854c0068ae767330bb51
+  External correlation Id: 1783264521294384187
+  Machine Id:              yicrF4Zwl7HqIQi5rIp4Xj5NOcE=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-lenovo-2022.3.62" (connect: 0.00s, validation: 0.01s, handshake: 0.01s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-lenovo-2022.3.62-notifications" at "2026-11-17T12:53:04.0677621Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully updated license
+Built from '2022.3/china_unity/release' branch; Version is '2022.3.62f2c1 (92e6e6be66dc) revision 9627366'; Using compiler version '192829333'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) 64bit CoreCountrySpecific' Language: 'zh' Physical Memory: 16175 MB
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Serial number assigned to: "F4-GC9H-K926-GCNB-GAP7-XXXX"
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1, IsPro: 0
+[Licensing::Client] Successfully resolved entitlement details
+
+COMMAND LINE ARGUMENTS:
+E:\2022.3.62f2c1\Editor\Unity.exe
+-batchmode
+-nographics
+-projectPath
+E:/codex111/2026-11-15/e-codex111-2026-11-11-new/work/W2EditMode
+-runTests
+-testPlatform
+EditMode
+-testResults
+E:/codex111/2026-11-15/e-codex111-2026-11-11-new/work/w2-editmode-results4.xml
+-logFile
+E:/codex111/2026-11-15/e-codex111-2026-11-11-new/work/w2-editmode-isolated4.log
+Successfully changed project path to: E:/codex111/2026-11-15/e-codex111-2026-11-11-new/work/W2EditMode
+E:/codex111/2026-11-15/e-codex111-2026-11-11-new/work/W2EditMode
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [160300]  Target information:
+
+Player connection [160300]  * "[IP] 192.168.134.1 [Port] 55505 [Flags] 2 [Guid] 3052774932 [EditorId] 3052774932 [Version] 1048832 [Id] WindowsEditor(7,LAPTOP-1O6OJIG1) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [160300]  * "[IP] 192.168.19.1 [Port] 55505 [Flags] 2 [Guid] 3052774932 [EditorId] 3052774932 [Version] 1048832 [Id] WindowsEditor(7,LAPTOP-1O6OJIG1) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [160300]  * "[IP] 10.115.97.24 [Port] 55505 [Flags] 2 [Guid] 3052774932 [EditorId] 3052774932 [Version] 1048832 [Id] WindowsEditor(7,LAPTOP-1O6OJIG1) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [160300] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [160300] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+[Package Manager] UpmClient::Connect -- Connected to IPC stream "Upm-158096" after 0.5 seconds.
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 9 packages:
+  Packages from [https://packages.unity.cn]:
+    com.unity.test-framework@1.1.33 (location: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\Library\PackageCache\com.unity.test-framework@1.1.33)
+    com.unity.ext.nunit@1.0.6 (location: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\Library\PackageCache\com.unity.ext.nunit@1.0.6)
+  Built-in packages:
+    com.unity.modules.animation@1.0.0 (location: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\Library\PackageCache\com.unity.modules.animation@1.0.0)
+    com.unity.modules.audio@1.0.0 (location: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\Library\PackageCache\com.unity.modules.audio@1.0.0)
+    com.unity.modules.imgui@1.0.0 (location: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\Library\PackageCache\com.unity.modules.imgui@1.0.0)
+    com.unity.modules.physics@1.0.0 (location: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\Library\PackageCache\com.unity.modules.physics@1.0.0)
+    com.unity.modules.uielements@1.0.0 (location: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\Library\PackageCache\com.unity.modules.uielements@1.0.0)
+    com.unity.modules.jsonserialize@1.0.0 (location: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\Library\PackageCache\com.unity.modules.jsonserialize@1.0.0)
+    com.unity.modules.ui@1.0.0 (location: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\Library\PackageCache\com.unity.modules.ui@1.0.0)
+[Subsystems] No new subsystems found in resolved package list.
+Package Manager log level set to [2]
+[Package Manager] Done registering packages in 0.60 seconds
+Artifact Garbage Collection - Removed 9 unused hashed content files
+Refreshing native plugins compatible for Editor in 2.20 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 2022.3.62f2c1 (92e6e6be66dc)
+[Subsystems] Discovering subsystems at path E:/2022.3.62f2c1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path E:/codex111/2026-11-15/e-codex111-2026-11-11-new/work/W2EditMode/Assets
+Forcing GfxDevice: Null
+GfxDevice: creating device client; threaded=0; jobified=0
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+[Licensing::Client] Successfully resolved entitlement details
+Initialize mono
+Mono path[0] = 'E:/2022.3.62f2c1/Editor/Data/Managed'
+Mono path[1] = 'E:/2022.3.62f2c1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'E:/2022.3.62f2c1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56096
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: E:/2022.3.62f2c1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+Registered in 0.022127 seconds.
+- Loaded All Assemblies, in  0.541 seconds
+Native extension for WindowsStandalone target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.268 seconds
+Domain Reload Profiling: 798ms
+	BeginReloadAssembly (201ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (0ms)
+	RebuildCommonClasses (37ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (99ms)
+	LoadAllAssembliesAndSetupDomain (183ms)
+		LoadAssemblies (194ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (178ms)
+			TypeCache.Refresh (176ms)
+				TypeCache.ScanAssembly (158ms)
+			ScanForSourceGeneratedMonoScriptInfo (1ms)
+			ResolveRequiredComponents (1ms)
+	FinalizeReload (269ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (215ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (15ms)
+			SetLoadedEditorAssemblies (7ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (2ms)
+			ProcessInitializeOnLoadAttributes (139ms)
+			ProcessInitializeOnLoadMethodAttributes (52ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[ScriptCompilation] Requested script compilation because: Assetdatabase observed changes in script compilation related files
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:80
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: E:\codex111\2026-11-15\e-codex111-2026-11-11-new\work\W2EditMode\
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc - - 200 - application/grpc 46.8751ms
+Starting: E:\2022.3.62f2c1\Editor\Data\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: E:/codex111/2026-11-15/e-codex111-2026-11-11-new/work/W2EditMode
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 2s114ms
+[126/129    1s] Csc Library/Bee/artifacts/1900b0aE.dag/YuDian.Tests.EditMode.dll (+2 others)
+[127/129    0s] CopyFiles Library/ScriptAssemblies/YuDian.Tests.EditMode.pdb
+[128/129    0s] CopyFiles Library/ScriptAssemblies/YuDian.Tests.EditMode.dll
+*** Tundra build success (2.04 seconds), 3 items updated, 129 evaluated
+AssetDatabase: script compilation time: 2.913466s
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.671 seconds
+Refreshing native plugins compatible for Editor in 0.79 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Total cache size 121386840
+Total cache size after purge 121386840
+Start importing Assets/Tests/EditMode/PatrolWavePlanTests.cs using Guid(22fa609498954d66b154c05cefe6822d) Importer(-1,00000000000000000000000000000000) [PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+ -> (artifact id: '1c239f2a1a2f826cdbcda2061122a409') in 0.017908 seconds
+Refreshing native plugins compatible for Editor in 0.73 ms, found 0 plugins.
+Native extension for WindowsStandalone target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.387 seconds
+Domain Reload Profiling: 1045ms
+	BeginReloadAssembly (269ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (6ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (23ms)
+	RebuildCommonClasses (45ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (62ms)
+	LoadAllAssembliesAndSetupDomain (271ms)
+		LoadAssemblies (437ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (22ms)
+			TypeCache.Refresh (17ms)
+				TypeCache.ScanAssembly (13ms)
+			ScanForSourceGeneratedMonoScriptInfo (3ms)
+			ResolveRequiredComponents (1ms)
+	FinalizeReload (388ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (282ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (12ms)
+			SetLoadedEditorAssemblies (2ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (65ms)
+			ProcessInitializeOnLoadAttributes (152ms)
+			ProcessInitializeOnLoadMethodAttributes (18ms)
+			AfterProcessingInitializeOnLoad (32ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (10ms)
+Refreshing native plugins compatible for Editor in 1.65 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=16bf056e4c6c73e439e4c58b41f0f8f0): Total: 4.560 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=2 ms, native=404 ms
+		Asset DB Callback time: managed=49 ms, native=7 ms
+		Scripting: domain reloads=1, domain reload time=1147 ms, compile time=2915 ms, other=32 ms
+		Project Asset Count: scripts=419, non-scripts=173
+		Asset File Changes: new=0, changed=1, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokeBeforeRefreshCallbacks: 3.527ms
+	ApplyChangesToAssetFolders: 0.015ms
+	Scan: 73.060ms
+	OnSourceAssetsModified: 2.663ms
+	GetAllGuidsForCategorization: 0.063ms
+	CategorizeAssets: 8.619ms
+	ImportOutOfDateAssets: 415.710ms (-2525.957ms without children)
+		ImportManagerImport: 23.572ms (5.226ms without children)
+			ImportInProcess: 18.325ms
+			UpdateCategorizedAssets: 0.021ms
+		CompileScripts: 2915.339ms
+		ReloadNativeAssets: 0.001ms
+		UnloadImportedAssets: 1.628ms
+		ReloadImportedAssets: 0.848ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.132ms
+		InitializingProgressBar: 0.000ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.000ms
+		OnDemandSchedulerStart: 0.146ms
+	PostProcessAllAssets: 48.314ms
+	Hotreload: 2.389ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.001ms
+	UnloadStreamsBegin: 0.279ms
+	PersistCurrentRevisions: 0.135ms
+	UnloadStreamsEnd: 0.004ms
+	GenerateScriptTypeHashes: 0.057ms
+	Untracked: 4005.228ms
+Application.AssetDatabase Initial Refresh End
+Scanning for USB devices : 4.812ms
+Initializing Unity extensions:
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-余电 · 车站原型
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+ProgressiveSceneManager::Cancel()
+Unloading 3 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 21 unused Assets / (470.1 KB). Loaded Objects now: 838.
+Memory consumption went from 82.3 MB to 81.9 MB.
+Total: 3.522900 ms (FindLiveObjects: 0.047700 ms CreateObjectMapping: 0.010500 ms MarkObjects: 3.261200 ms  DeleteObjects: 0.202500 ms)
+
+Microsoft Media Foundation video decoding to texture disabled: graphics device is Null, only Direct3D 11 and Direct3D 12 (only on desktop) are supported for hardware-accelerated video decoding.
+[Project] Loading completed in 11.904 seconds
+	Project init time: 				7.284 seconds
+		Template init time: 		0.000 seconds
+		Package Manager init time: 		0.470 seconds
+		Asset Database init time: 		1.040 seconds
+		Global illumination init time: 	0.007 seconds
+		Assemblies load time: 			0.845 seconds
+		Unity extensions init time: 	0.001 seconds
+		Asset Database refresh time: 	0.000 seconds
+	Scene opening time: 			1.564 seconds
+##utp:{"type":"ProjectInfo","version":2,"phase":"Immediate","time":1794919995764,"processId":158096,"projectLoad":11.9037469,"projectInit":7.2844497,"templateInit":0.0,"packageManagerInit":0.4703657,"assetDatabaseInit":1.0399401,"globalIlluminationInit":0.0071246,"assembliesLoad":0.8448085,"unityExtensionsInit":0.0009979,"assetDatabaseRefresh":0.0,"sceneOpening":1.5637223}
+##utp:{"type":"EditorInfo","version":2,"phase":"Immediate","time":1794919995764,"processId":158096,"editorVersion":"2022.3.62f2c1 (92e6e6be66dc)","branch":"2022.3/china_unity/release","buildType":"Release","platform":"Windows"}
+Running tests for EditMode
+Executing tests with settings: test mode = EditMode
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:InitializeAndExecuteRun (string[]) (at ./Library/PackageCache/com.unity.test-framework@1.1.33/UnityEditor.TestRunner/CommandLineTest/Executer.cs:47)
+UnityEditor.TestTools.TestRunner.CommandLineTest.TestStarter:UpdateWatch () (at ./Library/PackageCache/com.unity.test-framework@1.1.33/UnityEditor.TestRunner/CommandLineTest/TestStarter.cs:50)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@1.1.33/UnityEditor.TestRunner/CommandLineTest/Executer.cs Line: 47)
+
+[UnityConnectServicesConfig] config is NOT valid, switching to default
+Created GICache directory at C:/Users/lenovo/AppData/LocalLow/Unity/Caches/GiCache. Took: 0.133s, timestamps: [11.919 - 12.052]
+gi::BakeBackendSwitch: switching bake backend from 3 to 1.
+GfxDevice renderer is null. Unity cannot update the Ambient Probe and Reflection Probes that the SkyManager generates. Run the Editor without the -nographics argument or generate lighting for your scene.
+Scanning for USB devices : 4.506ms
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 0 unused Assets / (0 B). Loaded Objects now: 854.
+Memory consumption went from 81.0 MB to 81.0 MB.
+Total: 3.610500 ms (FindLiveObjects: 0.043000 ms CreateObjectMapping: 0.023500 ms MarkObjects: 3.539500 ms  DeleteObjects: 0.003700 ms)
+
+GfxDevice renderer is null. Unity cannot update the Ambient Probe and Reflection Probes that the SkyManager generates. Run the Editor without the -nographics argument or generate lighting for your scene.
+DisplayProgressbar: Test Runner
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 0 unused Assets / (0 B). Loaded Objects now: 859.
+Memory consumption went from 80.8 MB to 80.8 MB.
+Total: 5.373700 ms (FindLiveObjects: 0.069800 ms CreateObjectMapping: 0.013200 ms MarkObjects: 5.283500 ms  DeleteObjects: 0.006000 ms)
+
+Saving results to: E:/codex111/2026-11-15/e-codex111-2026-11-11-new/work/w2-editmode-results4.xml
+Request timed out while processing request "https://public-cdn.cloud.unitychina.cn/config/production", HTTP error code 0
+.[UnityConnect] Request timed out.
+Start importing ProjectSettings/ProjectSettings.asset using Guid(00000000000000004000000000000000) Importer(-1,00000000000000000000000000000000) [PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+ -> (artifact id: '3e1bf6daa8670e096237680655fda6c3') in 0.008689 seconds
+Refreshing native plugins compatible for Editor in 1.13 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=491107767b43e014f8b77bfd91bb8162): Total: 0.030 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-lenovo-2022.3.62-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-lenovo-2022.3.62 channel disconnected successfully.
