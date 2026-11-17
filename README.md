@@ -77,3 +77,12 @@
 `Docs/Verification/scripts/` 是测试副本里检查脚本的原样拷贝，仅作参考，不参与主工程编译。
 
 角色模型来源见 [第三方模型来源](第三方模型来源.txt)。
+
+## 自动化测试
+
+工程按程序集拆成三层：`YuDian.Runtime`（玩法代码，不引用 UnityEditor）、`YuDian.Editor`（菜单与调试绘制，仅 Editor）、`YuDian.Tests.EditMode`（测试）。编辑器能力通过 `Assets/Scripts/EditorHooks.cs` 的委托注入，运行时程序集不再直接调用 `UnityEditor`。
+
+EditMode 回归测试覆盖三块纯逻辑：血量与精英血量曲线（1–150 波不回退）、波次编排（51 波 28 只、每 5 波冲撞精英、第 80 波起每 25 波双精英）、武器数值（爆头 `(Damage*7+3)/4` 的取整边界、射击音调升调）。
+
+Unity 里 `Window > General > Test Runner > EditMode > Run All` 即可运行。最近一次 **13/13 通过**：[结果 XML](Docs/Verification/tests/EditMode-results.xml) · [运行日志](Docs/Verification/tests/EditMode-run.log) · [说明](Docs/Verification/tests/README.md)。
+

@@ -244,7 +244,7 @@ namespace YuDian
             return "9 生命、护甲和血包已满";
         }
 
-        private static void WaveComposition(int number, out int total, out int fast, out bool charger)
+        internal static void WaveComposition(int number, out int total, out int fast, out bool charger)
         {
             charger = number == 5 || (number > 5 && number % 5 == 0);
             if (number <= 4) { total = number + 2; fast = number >= 3 ? 1 : 0; return; }

@@ -201,7 +201,7 @@ namespace YuDian
                 enabled = false;
 #if UNITY_EDITOR
                 Debug.LogWarning("车站运行状态已丢失，Unity 已结束本次试玩。请重新点击 Play。", this);
-                UnityEditor.EditorApplication.isPlaying = false;
+                EditorHooks.ExitPlay();
 #else
                 Debug.LogError("车站运行状态未初始化，已停止车站更新。", this);
 #endif
@@ -443,7 +443,7 @@ namespace YuDian
             {
                 gameAudio.SaveVolumes();
 #if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false;
+                EditorHooks.ExitPlay();
 #else
                 Application.Quit();
 #endif
