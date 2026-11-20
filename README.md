@@ -6,7 +6,7 @@
 
 **技术展示**　章节与任务状态、分批刷怪及撤离结算、动画与物理命中判定。
 
-[代码讲解](CODE-WALKTHROUGH.md) · [问题复现与验证](Docs/Verification/README.md) · [EditMode 测试结果](Docs/Verification/tests/EditMode-results.xml)
+[实机演示（B 站，约 4 分钟）](https://www.bilibili.com/video/BV1BTs86jEvj/) · [问题复现与验证](Docs/Verification/README.md) · [EditMode 测试结果](Docs/Verification/tests/EditMode-results.xml)
 
 ## 运行与试玩
 
