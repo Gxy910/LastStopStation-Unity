@@ -6,6 +6,8 @@
 
 **技术展示**　章节与任务状态、分批刷怪及撤离结算、动画与物理命中判定。
 
+[代码讲解](CODE-WALKTHROUGH.md) · [问题复现与验证](Docs/Verification/README.md) · [EditMode 测试结果](Docs/Verification/tests/EditMode-results.xml)
+
 ## 运行与试玩
 
 1. 用 **Unity 2022.3.62f2c1** 打开仓库根目录，也就是包含 `Assets`、`Packages` 和 `ProjectSettings` 的目录。
@@ -27,7 +29,7 @@
 
 接送事件自己管理付费、领装备、战斗和逃离阶段。事件结束后，通过回调把结果交给主线，再由 `EpilogueStage` 按结局配置回站后的角色与场景。玩家因此能在第四章看到第三章选择带来的变化。
 
-[任务交互](Assets/Scripts/StationStory.cs#L131) · [章节切换](Assets/Scripts/StationPrototype.cs#L128) · [接送事件](Assets/Scripts/EscortEncounter.cs#L159) · [结局场景](Assets/Scripts/EpilogueStage.cs#L73)
+[任务交互](Assets/Scripts/StationStory.cs#L132) · [章节切换](Assets/Scripts/StationPrototype.cs#L135) · [接送事件](Assets/Scripts/EscortEncounter.cs#L161) · [结局场景](Assets/Scripts/EpilogueStage.cs#L77)
 
 ### 2. 货场波次调度与撤离结算
 
@@ -35,13 +37,13 @@
 
 任务分别记录当前波次与已清空波次。比如清完第 4 波、在第 5 波中途撤离，这次按第 4 波结算。成功撤离时通过 `PlayerPrefs` 更新最佳成绩，再回到车站。重新接单时从基础装备开始。
 
-[刷怪和清波](Assets/Scripts/Patrol/PatrolMission.cs#L138) · [精英冲撞](Assets/Scripts/Patrol/PatrolEnemy.cs#L222) · [撤离结算](Assets/Scripts/Patrol/PatrolMission.cs#L413)
+[刷怪和清波](Assets/Scripts/Patrol/PatrolMission.cs#L141) · [精英冲撞](Assets/Scripts/Patrol/PatrolEnemy.cs#L222) · [撤离结算](Assets/Scripts/Patrol/PatrolMission.cs#L412)
 
 ### 3. 用动画姿势更新头部受击区
 
 感染者的移动、动画和受击分别由角色控制器、骨骼动画和受击区处理。头部动画采样完成后，代码把绑定在头骨坐标下的偏移换算成世界坐标，更新头部受击球。武器从相机画面中心发出射线，查询前同步物理变换，再按最近命中和实体遮挡决定结果。这让头部跟随可见动作，同时保留身体命中和障碍物挡弹。
 
-[动画采样](Assets/Scripts/AssetAnimationPlayer.cs#L50) · [头部受击区](Assets/Scripts/Patrol/PatrolEnemy.cs#L115) · [射击与遮挡判定](Assets/Scripts/Patrol/PatrolWeapon.cs#L251)
+[动画采样](Assets/Scripts/AssetAnimationPlayer.cs#L50) · [头部受击区](Assets/Scripts/Patrol/PatrolEnemy.cs#L132) · [射击与遮挡判定](Assets/Scripts/Patrol/PatrolWeapon.cs#L290)
 
 ## 问题排查记录
 
@@ -64,7 +66,7 @@
 
 验证记录：[修复前重叠](Docs/Verification/logs/spawn_safety_before.log) · [修复后分离](Docs/Verification/logs/spawn_safety_after.log) · [出生安全与入口切换回归](Docs/Verification/logs/PatrolSpawnSafetyChecksResume-resume-final.log)，关键词 `SPAWN REPRO`、`SPAWN SAFETY`。
 
-[出生空间检查与入口切换](Assets/Scripts/Patrol/PatrolMission.cs#L314) · [第二只精英的入场逻辑](Assets/Scripts/Patrol/PatrolMission.cs#L346)
+[出生空间检查与入口切换](Assets/Scripts/Patrol/PatrolMission.cs#L321) · [第二只精英的入场逻辑](Assets/Scripts/Patrol/PatrolMission.cs#L353)
 
 ## 验证范围与资源
 
